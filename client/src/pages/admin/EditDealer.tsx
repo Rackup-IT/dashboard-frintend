@@ -1,13 +1,20 @@
-import { useState, useEffect } from "react";
-import { useRoute, useLocation } from "wouter";
-import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { X, Plus } from "lucide-react";
-import { dealerListStore, type DealerItem } from "@/lib/dealerListStore";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
+import { type DealerItem } from "@/lib/dealerListStore";
+import { apiRequest } from "@/lib/queryClient";
+import { Plus, X } from "lucide-react";
+import { useEffect, useState } from "react";
+import { useLocation, useRoute } from "wouter";
 
 const TIMEZONES = [
   "Pacific Time Zone",
@@ -22,10 +29,10 @@ export default function EditDealer() {
   const [, params] = useRoute("/admin/dealers/:id/edit");
   const [, setLocation] = useLocation();
   const { toast } = useToast();
-  const dealerId = params?.id ? parseInt(params.id) : null;
+  const dealerId = params?.id;
 
   const [formData, setFormData] = useState<Partial<DealerItem>>({
-    name: "",
+    dealerName: "",
     type: [],
     website: "",
     permasignupUrl: "",
@@ -65,7 +72,12 @@ export default function EditDealer() {
 
   useEffect(() => {
     if (dealerId) {
-      const dealer = dealerListStore.getDealerById(dealerId);
+      const dealer = apiRequest("GET", `dealer/get-single/${dealerId}`).then(
+        (data) => {
+          console.log(data);
+          return data.dealer;
+        }
+      );
       if (dealer) {
         setFormData(dealer);
       } else {
@@ -80,12 +92,12 @@ export default function EditDealer() {
   }, [dealerId]);
 
   const handleInputChange = (field: keyof DealerItem, value: any) => {
-    setFormData(prev => ({ ...prev, [field]: value }));
+    setFormData((prev) => ({ ...prev, [field]: value }));
   };
 
   const handleAddType = (type: string) => {
     if (type && !formData.type?.includes(type)) {
-      setFormData(prev => ({
+      setFormData((prev) => ({
         ...prev,
         type: [...(prev.type || []), type],
       }));
@@ -94,14 +106,14 @@ export default function EditDealer() {
   };
 
   const handleRemoveType = (type: string) => {
-    setFormData(prev => ({
+    setFormData((prev) => ({
       ...prev,
-      type: prev.type?.filter(t => t !== type) || [],
+      type: prev.type?.filter((t) => t !== type) || [],
     }));
   };
 
   const handleAddPhoneNumber = () => {
-    setFormData(prev => ({
+    setFormData((prev) => ({
       ...prev,
       phoneNumbers: [...(prev.phoneNumbers || []), ""],
     }));
@@ -110,11 +122,11 @@ export default function EditDealer() {
   const handlePhoneNumberChange = (index: number, value: string) => {
     const newPhoneNumbers = [...(formData.phoneNumbers || [])];
     newPhoneNumbers[index] = value;
-    setFormData(prev => ({ ...prev, phoneNumbers: newPhoneNumbers }));
+    setFormData((prev) => ({ ...prev, phoneNumbers: newPhoneNumbers }));
   };
 
   const handleRemovePhoneNumber = (index: number) => {
-    setFormData(prev => ({
+    setFormData((prev) => ({
       ...prev,
       phoneNumbers: prev.phoneNumbers?.filter((_, i) => i !== index) || [],
     }));
@@ -124,12 +136,18 @@ export default function EditDealer() {
     e.preventDefault();
     if (!dealerId) return;
 
-    dealerListStore.updateDealer(dealerId, formData);
-    toast({
-      title: "Success",
-      description: "Dealer updated successfully",
+    const dealerUpdates = { ...formData };
+    const res = apiRequest(
+      "PUT",
+      `dealer/update/${dealerId}`,
+      dealerUpdates
+    ).then((data) => {
+      toast({
+        title: "Success",
+        description: "Dealer updated successfully",
+      });
+      setLocation("/admin/dealer-list");
     });
-    setLocation("/admin/dealer-list");
   };
 
   return (
@@ -138,7 +156,8 @@ export default function EditDealer() {
       <div>
         <h1 className="text-2xl font-bold text-gray-900">Edit Dealer</h1>
         <div className="text-sm text-gray-500">
-          <span>Dashboard</span> / <span>Dealer List</span> / <span>Edit Dealer</span>
+          <span>Dashboard</span> / <span>Dealer List</span> /{" "}
+          <span>Edit Dealer</span>
         </div>
       </div>
 
@@ -151,8 +170,10 @@ export default function EditDealer() {
                 <Label htmlFor="dealerName">Dealer Name</Label>
                 <Input
                   id="dealerName"
-                  value={formData.name || ""}
-                  onChange={(e) => handleInputChange("name", e.target.value)}
+                  value={formData.dealerName || ""}
+                  onChange={(e) =>
+                    handleInputChange("dealerName", e.target.value)
+                  }
                   placeholder="Downtown Toyota"
                   data-testid="input-dealer-name"
                 />
@@ -160,7 +181,10 @@ export default function EditDealer() {
               <div className="space-y-2">
                 <Label htmlFor="type">Type</Label>
                 <div className="space-y-2">
-                  <Select value={typeDropdownValue} onValueChange={handleAddType}>
+                  <Select
+                    value={typeDropdownValue}
+                    onValueChange={handleAddType}
+                  >
                     <SelectTrigger data-testid="select-type">
                       <SelectValue placeholder="Select type" />
                     </SelectTrigger>
@@ -212,7 +236,9 @@ export default function EditDealer() {
                 <Input
                   id="permasignupUrl"
                   value={formData.permasignupUrl || ""}
-                  onChange={(e) => handleInputChange("permasignupUrl", e.target.value)}
+                  onChange={(e) =>
+                    handleInputChange("permasignupUrl", e.target.value)
+                  }
                   placeholder="https://bfbs.group.com/shop/login.asp..."
                   data-testid="input-permasignup"
                 />
@@ -225,7 +251,9 @@ export default function EditDealer() {
                 <Label htmlFor="timezone">Time Zone</Label>
                 <Select
                   value={formData.timezone || ""}
-                  onValueChange={(value) => handleInputChange("timezone", value)}
+                  onValueChange={(value) =>
+                    handleInputChange("timezone", value)
+                  }
                 >
                   <SelectTrigger data-testid="select-timezone">
                     <SelectValue placeholder="Select timezone" />
@@ -244,7 +272,9 @@ export default function EditDealer() {
                 <Input
                   id="crmEmail"
                   value={formData.crmEmail || ""}
-                  onChange={(e) => handleInputChange("crmEmail", e.target.value)}
+                  onChange={(e) =>
+                    handleInputChange("crmEmail", e.target.value)
+                  }
                   data-testid="input-crm-email"
                 />
               </div>
@@ -257,7 +287,9 @@ export default function EditDealer() {
                 <Input
                   id="crmSource"
                   value={formData.crmSource || ""}
-                  onChange={(e) => handleInputChange("crmSource", e.target.value)}
+                  onChange={(e) =>
+                    handleInputChange("crmSource", e.target.value)
+                  }
                   data-testid="input-crm-source"
                 />
               </div>
@@ -266,7 +298,9 @@ export default function EditDealer() {
                 <Input
                   id="crmUrlType"
                   value={formData.crmUrlType || ""}
-                  onChange={(e) => handleInputChange("crmUrlType", e.target.value)}
+                  onChange={(e) =>
+                    handleInputChange("crmUrlType", e.target.value)
+                  }
                   data-testid="input-crm-url-type"
                 />
               </div>
@@ -278,7 +312,9 @@ export default function EditDealer() {
               <Input
                 id="crmEmailSubject"
                 value={formData.crmEmailSubject || ""}
-                onChange={(e) => handleInputChange("crmEmailSubject", e.target.value)}
+                onChange={(e) =>
+                  handleInputChange("crmEmailSubject", e.target.value)
+                }
                 placeholder="Crm Email Subject"
                 data-testid="input-crm-email-subject"
               />
@@ -302,7 +338,9 @@ export default function EditDealer() {
                   <div key={index} className="flex gap-2">
                     <Input
                       value={phone}
-                      onChange={(e) => handlePhoneNumberChange(index, e.target.value)}
+                      onChange={(e) =>
+                        handlePhoneNumberChange(index, e.target.value)
+                      }
                       placeholder="+1234567890"
                       data-testid={`input-phone-${index}`}
                     />
@@ -329,7 +367,9 @@ export default function EditDealer() {
                   <Input
                     id="salesCrmLink"
                     value={formData.salesCrmLink || ""}
-                    onChange={(e) => handleInputChange("salesCrmLink", e.target.value)}
+                    onChange={(e) =>
+                      handleInputChange("salesCrmLink", e.target.value)
+                    }
                     placeholder="https://www.ekadro.com"
                     data-testid="input-sales-crm-link"
                   />
@@ -339,7 +379,9 @@ export default function EditDealer() {
                   <Input
                     id="salesCrmUsername"
                     value={formData.salesCrmUsername || ""}
-                    onChange={(e) => handleInputChange("salesCrmUsername", e.target.value)}
+                    onChange={(e) =>
+                      handleInputChange("salesCrmUsername", e.target.value)
+                    }
                     placeholder="manager@truebdc.com"
                     data-testid="input-sales-crm-username"
                   />
@@ -352,7 +394,9 @@ export default function EditDealer() {
                     id="salesCrmPassword"
                     type="password"
                     value={formData.salesCrmPassword || ""}
-                    onChange={(e) => handleInputChange("salesCrmPassword", e.target.value)}
+                    onChange={(e) =>
+                      handleInputChange("salesCrmPassword", e.target.value)
+                    }
                     data-testid="input-sales-crm-password"
                   />
                 </div>
@@ -361,7 +405,9 @@ export default function EditDealer() {
                   <Input
                     id="salesCrmEmailCode"
                     value={formData.salesCrmEmailCode || ""}
-                    onChange={(e) => handleInputChange("salesCrmEmailCode", e.target.value)}
+                    onChange={(e) =>
+                      handleInputChange("salesCrmEmailCode", e.target.value)
+                    }
                     data-testid="input-sales-crm-email-code"
                   />
                 </div>
@@ -370,14 +416,18 @@ export default function EditDealer() {
 
             {/* Data Mining/S2S CRM Section */}
             <div className="space-y-4">
-              <h3 className="font-semibold text-gray-700">Data Mining/S2S CRM</h3>
+              <h3 className="font-semibold text-gray-700">
+                Data Mining/S2S CRM
+              </h3>
               <div className="grid grid-cols-2 gap-6">
                 <div className="space-y-2">
                   <Label htmlFor="dataMiningLink">Link</Label>
                   <Input
                     id="dataMiningLink"
                     value={formData.dataMiningLink || ""}
-                    onChange={(e) => handleInputChange("dataMiningLink", e.target.value)}
+                    onChange={(e) =>
+                      handleInputChange("dataMiningLink", e.target.value)
+                    }
                     data-testid="input-data-mining-link"
                   />
                 </div>
@@ -386,7 +436,9 @@ export default function EditDealer() {
                   <Input
                     id="dataMiningUsername"
                     value={formData.dataMiningUsername || ""}
-                    onChange={(e) => handleInputChange("dataMiningUsername", e.target.value)}
+                    onChange={(e) =>
+                      handleInputChange("dataMiningUsername", e.target.value)
+                    }
                     data-testid="input-data-mining-username"
                   />
                 </div>
@@ -398,7 +450,9 @@ export default function EditDealer() {
                     id="dataMiningPassword"
                     type="password"
                     value={formData.dataMiningPassword || ""}
-                    onChange={(e) => handleInputChange("dataMiningPassword", e.target.value)}
+                    onChange={(e) =>
+                      handleInputChange("dataMiningPassword", e.target.value)
+                    }
                     data-testid="input-data-mining-password"
                   />
                 </div>
@@ -407,7 +461,9 @@ export default function EditDealer() {
                   <Input
                     id="dataMiningEmailCode"
                     value={formData.dataMiningEmailCode || ""}
-                    onChange={(e) => handleInputChange("dataMiningEmailCode", e.target.value)}
+                    onChange={(e) =>
+                      handleInputChange("dataMiningEmailCode", e.target.value)
+                    }
                     data-testid="input-data-mining-email-code"
                   />
                 </div>
@@ -423,7 +479,9 @@ export default function EditDealer() {
                   <Input
                     id="dealerIdN"
                     value={formData.dealerIdN || ""}
-                    onChange={(e) => handleInputChange("dealerIdN", e.target.value)}
+                    onChange={(e) =>
+                      handleInputChange("dealerIdN", e.target.value)
+                    }
                     data-testid="input-dealer-id-n"
                   />
                 </div>
@@ -432,7 +490,9 @@ export default function EditDealer() {
                   <Input
                     id="dealerIdUsername"
                     value={formData.dealerIdUsername || ""}
-                    onChange={(e) => handleInputChange("dealerIdUsername", e.target.value)}
+                    onChange={(e) =>
+                      handleInputChange("dealerIdUsername", e.target.value)
+                    }
                     data-testid="input-dealer-id-username"
                   />
                 </div>
@@ -444,7 +504,9 @@ export default function EditDealer() {
                     id="dealerIdPassword"
                     type="password"
                     value={formData.dealerIdPassword || ""}
-                    onChange={(e) => handleInputChange("dealerIdPassword", e.target.value)}
+                    onChange={(e) =>
+                      handleInputChange("dealerIdPassword", e.target.value)
+                    }
                     data-testid="input-dealer-id-password"
                   />
                 </div>
@@ -453,7 +515,9 @@ export default function EditDealer() {
                   <Input
                     id="dealerIdEmailCode"
                     value={formData.dealerIdEmailCode || ""}
-                    onChange={(e) => handleInputChange("dealerIdEmailCode", e.target.value)}
+                    onChange={(e) =>
+                      handleInputChange("dealerIdEmailCode", e.target.value)
+                    }
                     data-testid="input-dealer-id-email-code"
                   />
                 </div>
@@ -469,7 +533,9 @@ export default function EditDealer() {
                   <Input
                     id="serviceCrmLink"
                     value={formData.serviceCrmLink || ""}
-                    onChange={(e) => handleInputChange("serviceCrmLink", e.target.value)}
+                    onChange={(e) =>
+                      handleInputChange("serviceCrmLink", e.target.value)
+                    }
                     data-testid="input-service-crm-link"
                   />
                 </div>
@@ -478,7 +544,9 @@ export default function EditDealer() {
                   <Input
                     id="serviceCrmUsername"
                     value={formData.serviceCrmUsername || ""}
-                    onChange={(e) => handleInputChange("serviceCrmUsername", e.target.value)}
+                    onChange={(e) =>
+                      handleInputChange("serviceCrmUsername", e.target.value)
+                    }
                     data-testid="input-service-crm-username"
                   />
                 </div>
@@ -490,7 +558,9 @@ export default function EditDealer() {
                     id="serviceCrmPassword"
                     type="password"
                     value={formData.serviceCrmPassword || ""}
-                    onChange={(e) => handleInputChange("serviceCrmPassword", e.target.value)}
+                    onChange={(e) =>
+                      handleInputChange("serviceCrmPassword", e.target.value)
+                    }
                     data-testid="input-service-crm-password"
                   />
                 </div>
@@ -499,7 +569,9 @@ export default function EditDealer() {
                   <Input
                     id="serviceCrmEmailCode"
                     value={formData.serviceCrmEmailCode || ""}
-                    onChange={(e) => handleInputChange("serviceCrmEmailCode", e.target.value)}
+                    onChange={(e) =>
+                      handleInputChange("serviceCrmEmailCode", e.target.value)
+                    }
                     data-testid="input-service-crm-email-code"
                   />
                 </div>
@@ -513,7 +585,9 @@ export default function EditDealer() {
                 <Input
                   id="specialAttention"
                   value={formData.specialAttention || ""}
-                  onChange={(e) => handleInputChange("specialAttention", e.target.value)}
+                  onChange={(e) =>
+                    handleInputChange("specialAttention", e.target.value)
+                  }
                   placeholder="N/A"
                   data-testid="input-special-attention"
                 />
@@ -523,7 +597,9 @@ export default function EditDealer() {
                 <Input
                   id="voManager"
                   value={formData.voManager || ""}
-                  onChange={(e) => handleInputChange("voManager", e.target.value)}
+                  onChange={(e) =>
+                    handleInputChange("voManager", e.target.value)
+                  }
                   placeholder="VIP Manager"
                   data-testid="input-vo-manager"
                 />
@@ -536,7 +612,9 @@ export default function EditDealer() {
                 <Input
                   id="salesTransfer"
                   value={formData.salesTransfer || ""}
-                  onChange={(e) => handleInputChange("salesTransfer", e.target.value)}
+                  onChange={(e) =>
+                    handleInputChange("salesTransfer", e.target.value)
+                  }
                   placeholder="888-360-2937"
                   data-testid="input-sales-transfer"
                 />
@@ -546,7 +624,9 @@ export default function EditDealer() {
                 <Input
                   id="serviceTransfer"
                   value={formData.serviceTransfer || ""}
-                  onChange={(e) => handleInputChange("serviceTransfer", e.target.value)}
+                  onChange={(e) =>
+                    handleInputChange("serviceTransfer", e.target.value)
+                  }
                   placeholder="888-360-2937"
                   data-testid="input-service-transfer"
                 />
@@ -559,7 +639,9 @@ export default function EditDealer() {
                 <Input
                   id="faxTransfer"
                   value={formData.faxTransfer || ""}
-                  onChange={(e) => handleInputChange("faxTransfer", e.target.value)}
+                  onChange={(e) =>
+                    handleInputChange("faxTransfer", e.target.value)
+                  }
                   placeholder="N/A"
                   data-testid="input-fax-transfer"
                 />
@@ -569,7 +651,9 @@ export default function EditDealer() {
                 <Input
                   id="ringCentral"
                   value={formData.ringCentral || ""}
-                  onChange={(e) => handleInputChange("ringCentral", e.target.value)}
+                  onChange={(e) =>
+                    handleInputChange("ringCentral", e.target.value)
+                  }
                   placeholder="410-987-7907"
                   data-testid="input-ring-central"
                 />

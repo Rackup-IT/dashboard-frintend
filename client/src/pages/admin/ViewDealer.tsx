@@ -1,15 +1,27 @@
-import { useRoute, useLocation } from "wouter";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { apiRequest } from "@/lib/queryClient";
 import { ChevronLeft } from "lucide-react";
-import { dealerListStore } from "@/lib/dealerListStore";
+import { useEffect, useState } from "react";
+import { useLocation, useRoute } from "wouter";
 
 export default function ViewDealer() {
   const [, params] = useRoute("/admin/dealers/:id");
   const [, setLocation] = useLocation();
-  
-  const dealerId = params?.id ? parseInt(params.id) : null;
-  const dealer = dealerId ? dealerListStore.getDealerById(dealerId) : null;
+  const [dealer, setDealer] = useState<any>(null);
+
+  const dealerId = params?.id;
+  useEffect(() => {
+    if (params?.id) {
+      loadDealer();
+    }
+  }, [params?.id]);
+  const loadDealer = () => {
+    const dealer = apiRequest("GET", `dealer/get-single/${dealerId}`).then(
+      (data) => {
+        setDealer(data.dealer);
+      }
+    );
+  };
 
   if (!dealer) {
     return (
@@ -17,7 +29,10 @@ export default function ViewDealer() {
         <div className="mb-6">
           <h1 className="text-2xl font-bold">Dealer Not Found</h1>
         </div>
-        <Button onClick={() => setLocation("/admin/dealer-list")} data-testid="button-back">
+        <Button
+          onClick={() => setLocation("/admin/dealer-list")}
+          data-testid="button-back"
+        >
           <ChevronLeft className="h-4 w-4 mr-2" />
           Back to Dealer List
         </Button>
@@ -27,14 +42,18 @@ export default function ViewDealer() {
 
   // Generate Google Maps search URL for basic map display
   // Note: Using basic Google Maps embed without API key for demo purposes
-  const searchQuery = dealer.address || `${dealer.name} Oakland CA`;
-  const mapEmbedUrl = `https://maps.google.com/maps?q=${encodeURIComponent(searchQuery)}&t=&z=15&ie=UTF8&iwloc=&output=embed`;
+  const searchQuery = dealer.address || `${dealer.dealerName} Oakland CA`;
+  const mapEmbedUrl = `https://maps.google.com/maps?q=${encodeURIComponent(
+    searchQuery
+  )}&t=&z=15&ie=UTF8&iwloc=&output=embed`;
 
   return (
     <div className="p-6">
       {/* Header */}
       <div className="mb-6">
-        <h1 className="text-2xl font-bold" data-testid="text-page-title">View Dealer</h1>
+        <h1 className="text-2xl font-bold" data-testid="text-page-title">
+          View Dealer
+        </h1>
         <p className="text-sm text-muted-foreground">
           Dashboard / Dealer List / View Dealer
         </p>
@@ -42,7 +61,9 @@ export default function ViewDealer() {
 
       {/* Dealer Name */}
       <div className="mb-6">
-        <h2 className="text-xl font-semibold" data-testid="text-dealer-name">{dealer.name}</h2>
+        <h2 className="text-xl font-semibold" data-testid="text-dealer-name">
+          {dealer.dealerName}
+        </h2>
       </div>
 
       {/* Content Grid */}
@@ -52,10 +73,12 @@ export default function ViewDealer() {
           {/* Dealer Website */}
           {dealer.website && (
             <div>
-              <div className="text-sm font-medium text-muted-foreground mb-1">Dealer Website</div>
-              <a 
-                href={dealer.website} 
-                target="_blank" 
+              <div className="text-sm font-medium text-muted-foreground mb-1">
+                Dealer Website
+              </div>
+              <a
+                href={dealer.website}
+                target="_blank"
                 rel="noopener noreferrer"
                 className="text-blue-600 hover:underline"
                 data-testid="link-dealer-website"
@@ -68,7 +91,9 @@ export default function ViewDealer() {
           {/* Type */}
           {dealer.type && dealer.type.length > 0 && (
             <div>
-              <div className="text-sm font-medium text-muted-foreground mb-1">Type</div>
+              <div className="text-sm font-medium text-muted-foreground mb-1">
+                Type
+              </div>
               <div data-testid="text-dealer-type">{dealer.type.join(", ")}</div>
             </div>
           )}
@@ -76,7 +101,9 @@ export default function ViewDealer() {
           {/* Address */}
           {dealer.address && (
             <div>
-              <div className="text-sm font-medium text-muted-foreground mb-1">Address</div>
+              <div className="text-sm font-medium text-muted-foreground mb-1">
+                Address
+              </div>
               <div data-testid="text-dealer-address">{dealer.address}</div>
             </div>
           )}
@@ -84,7 +111,9 @@ export default function ViewDealer() {
           {/* Hours */}
           {dealer.hours && (
             <div>
-              <div className="text-sm font-medium text-muted-foreground mb-1">Hours</div>
+              <div className="text-sm font-medium text-muted-foreground mb-1">
+                Hours
+              </div>
               <div data-testid="text-dealer-hours">{dealer.hours}</div>
             </div>
           )}
@@ -92,15 +121,23 @@ export default function ViewDealer() {
           {/* Time Zone */}
           {dealer.timezone && (
             <div>
-              <div className="text-sm font-medium text-muted-foreground mb-1">Time Zone</div>
+              <div className="text-sm font-medium text-muted-foreground mb-1">
+                Time Zone
+              </div>
               <div data-testid="text-dealer-timezone">{dealer.timezone}</div>
             </div>
           )}
 
           {/* Dealer Pronunciation with Audio Player */}
           <div>
-            <div className="text-sm font-medium text-muted-foreground mb-1">Dealer Pronunciation</div>
-            <audio controls className="w-full max-w-xs" data-testid="audio-pronunciation">
+            <div className="text-sm font-medium text-muted-foreground mb-1">
+              Dealer Pronunciation
+            </div>
+            <audio
+              controls
+              className="w-full max-w-xs"
+              data-testid="audio-pronunciation"
+            >
               <source src="" type="audio/mpeg" />
               Your browser does not support the audio element.
             </audio>
@@ -109,28 +146,36 @@ export default function ViewDealer() {
           {/* CRM Information */}
           {dealer.crmEmail && (
             <div>
-              <div className="text-sm font-medium text-muted-foreground mb-1">Crm Email Address</div>
+              <div className="text-sm font-medium text-muted-foreground mb-1">
+                Crm Email Address
+              </div>
               <div data-testid="text-crm-email">{dealer.crmEmail}</div>
             </div>
           )}
 
           {dealer.crmSource && (
             <div>
-              <div className="text-sm font-medium text-muted-foreground mb-1">Crm Source</div>
+              <div className="text-sm font-medium text-muted-foreground mb-1">
+                Crm Source
+              </div>
               <div data-testid="text-crm-source">{dealer.crmSource}</div>
             </div>
           )}
 
           {dealer.crmEmailSubject && (
             <div>
-              <div className="text-sm font-medium text-muted-foreground mb-1">Crm Email Subject</div>
+              <div className="text-sm font-medium text-muted-foreground mb-1">
+                Crm Email Subject
+              </div>
               <div data-testid="text-crm-subject">{dealer.crmEmailSubject}</div>
             </div>
           )}
 
           {dealer.crmUrlType && (
             <div>
-              <div className="text-sm font-medium text-muted-foreground mb-1">Crm Up Type</div>
+              <div className="text-sm font-medium text-muted-foreground mb-1">
+                Crm Up Type
+              </div>
               <div data-testid="text-crm-url-type">{dealer.crmUrlType}</div>
             </div>
           )}
@@ -138,43 +183,61 @@ export default function ViewDealer() {
           {/* Transfer Numbers */}
           {dealer.specialAttention && (
             <div>
-              <div className="text-sm font-medium text-muted-foreground mb-1">Special Attention</div>
-              <div data-testid="text-special-attention">{dealer.specialAttention}</div>
+              <div className="text-sm font-medium text-muted-foreground mb-1">
+                Special Attention
+              </div>
+              <div data-testid="text-special-attention">
+                {dealer.specialAttention}
+              </div>
             </div>
           )}
 
           {dealer.voManager && (
             <div>
-              <div className="text-sm font-medium text-muted-foreground mb-1">VIP Manager</div>
+              <div className="text-sm font-medium text-muted-foreground mb-1">
+                VIP Manager
+              </div>
               <div data-testid="text-vip-manager">{dealer.voManager}</div>
             </div>
           )}
 
           {dealer.salesTransfer && (
             <div>
-              <div className="text-sm font-medium text-muted-foreground mb-1">Sales Transfer #</div>
-              <div data-testid="text-sales-transfer">{dealer.salesTransfer}</div>
+              <div className="text-sm font-medium text-muted-foreground mb-1">
+                Sales Transfer #
+              </div>
+              <div data-testid="text-sales-transfer">
+                {dealer.salesTransfer}
+              </div>
             </div>
           )}
 
           {dealer.serviceTransfer && (
             <div>
-              <div className="text-sm font-medium text-muted-foreground mb-1">Service Transfer #</div>
-              <div data-testid="text-service-transfer">{dealer.serviceTransfer}</div>
+              <div className="text-sm font-medium text-muted-foreground mb-1">
+                Service Transfer #
+              </div>
+              <div data-testid="text-service-transfer">
+                {dealer.serviceTransfer}
+              </div>
             </div>
           )}
 
           {/* Parts Transfer - using faxTransfer as placeholder */}
           {dealer.faxTransfer && (
             <div>
-              <div className="text-sm font-medium text-muted-foreground mb-1">Parts Transfer #</div>
+              <div className="text-sm font-medium text-muted-foreground mb-1">
+                Parts Transfer #
+              </div>
               <div data-testid="text-parts-transfer">{dealer.faxTransfer}</div>
             </div>
           )}
 
           {dealer.ringCentral && (
             <div>
-              <div className="text-sm font-medium text-muted-foreground mb-1">Ring Central #</div>
+              <div className="text-sm font-medium text-muted-foreground mb-1">
+                Ring Central #
+              </div>
               <div data-testid="text-ring-central">{dealer.ringCentral}</div>
             </div>
           )}

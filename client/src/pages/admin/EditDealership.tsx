@@ -1,12 +1,18 @@
-import { useState, useEffect } from "react";
-import { useLocation, useRoute } from "wouter";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
 import { dealershipStore } from "@/lib/dealershipStore";
+import { useEffect, useState } from "react";
+import { useLocation, useRoute } from "wouter";
 
 // Mock dealers list - in real app, this would come from an API
 const availableDealers = [
@@ -22,7 +28,7 @@ export default function EditDealership() {
   const [, setLocation] = useLocation();
   const [, params] = useRoute("/admin/dealerships/:id/edit");
   const { toast } = useToast();
-  
+
   const dealershipId = params?.id ? parseInt(params.id) : 0;
 
   const [formData, setFormData] = useState({
@@ -57,7 +63,7 @@ export default function EditDealership() {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     if (formData.password && formData.password !== formData.confirmPassword) {
       toast({
         title: "Error",
@@ -83,8 +89,8 @@ export default function EditDealership() {
       title: "Success",
       description: "Dealership updated successfully",
     });
-    
-    setLocation('/admin/dealership-logins');
+
+    setLocation("/admin/dealership-logins");
   };
 
   const handleAddDealer = () => {
@@ -100,7 +106,7 @@ export default function EditDealership() {
   const handleRemoveDealer = (dealer: string) => {
     setFormData({
       ...formData,
-      assignedDealers: formData.assignedDealers.filter(d => d !== dealer),
+      assignedDealers: formData.assignedDealers.filter((d) => d !== dealer),
     });
   };
 
@@ -141,7 +147,9 @@ export default function EditDealership() {
                   <Input
                     id="name"
                     value={formData.name}
-                    onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                    onChange={(e) =>
+                      setFormData({ ...formData, name: e.target.value })
+                    }
                     required
                     data-testid="input-name"
                   />
@@ -154,7 +162,9 @@ export default function EditDealership() {
                     type="password"
                     placeholder="Leave blank to keep current password"
                     value={formData.password}
-                    onChange={(e) => setFormData({ ...formData, password: e.target.value })}
+                    onChange={(e) =>
+                      setFormData({ ...formData, password: e.target.value })
+                    }
                     data-testid="input-password"
                   />
                 </div>
@@ -168,20 +178,29 @@ export default function EditDealership() {
                     id="email"
                     type="email"
                     value={formData.email}
-                    onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                    onChange={(e) =>
+                      setFormData({ ...formData, email: e.target.value })
+                    }
                     required
                     data-testid="input-email"
                   />
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="confirmPassword">Dealership Confirm Password</Label>
+                  <Label htmlFor="confirmPassword">
+                    Dealership Confirm Password
+                  </Label>
                   <Input
                     id="confirmPassword"
                     type="password"
                     placeholder="Leave blank to keep current password"
                     value={formData.confirmPassword}
-                    onChange={(e) => setFormData({ ...formData, confirmPassword: e.target.value })}
+                    onChange={(e) =>
+                      setFormData({
+                        ...formData,
+                        confirmPassword: e.target.value,
+                      })
+                    }
                     data-testid="input-confirm-password"
                   />
                 </div>
@@ -191,7 +210,7 @@ export default function EditDealership() {
             {/* Assign Dealers */}
             <div className="space-y-2">
               <Label htmlFor="assignDealers">Dealership Assign Dealers</Label>
-              
+
               {/* Display assigned dealers as badges */}
               <div className="flex flex-wrap gap-2 mb-2">
                 {formData.assignedDealers.map((dealer) => (
@@ -213,13 +232,18 @@ export default function EditDealership() {
               </div>
 
               <div className="flex gap-2">
-                <Select value={selectedDealer} onValueChange={setSelectedDealer}>
+                <Select
+                  value={selectedDealer}
+                  onValueChange={setSelectedDealer}
+                >
                   <SelectTrigger id="assignDealers" data-testid="select-dealer">
                     <SelectValue placeholder="Select dealer to add..." />
                   </SelectTrigger>
                   <SelectContent>
                     {availableDealers
-                      .filter(dealer => !formData.assignedDealers.includes(dealer))
+                      .filter(
+                        (dealer) => !formData.assignedDealers.includes(dealer)
+                      )
                       .map((dealer) => (
                         <SelectItem key={dealer} value={dealer}>
                           {dealer}
@@ -227,8 +251,8 @@ export default function EditDealership() {
                       ))}
                   </SelectContent>
                 </Select>
-                <Button 
-                  type="button" 
+                <Button
+                  type="button"
                   variant="outline"
                   onClick={handleAddDealer}
                   disabled={!selectedDealer}
@@ -241,7 +265,7 @@ export default function EditDealership() {
 
             {/* Submit Button */}
             <div className="flex justify-end">
-              <Button 
+              <Button
                 type="submit"
                 className="bg-blue-600 hover:bg-blue-700 text-white"
                 data-testid="button-update"

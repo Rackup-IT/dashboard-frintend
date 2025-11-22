@@ -1,12 +1,15 @@
-import { useState } from "react";
-import { useLocation } from "wouter";
-import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
+import { Card, CardContent } from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
+import { Input } from "@/components/ui/input";
+import { auth, provider } from "@/lib/firebase";
+import { apiRequest } from "@/lib/queryClient";
+import { signInWithPopup } from "firebase/auth";
 import { Eye, EyeOff } from "lucide-react";
+import { useState } from "react";
 import { FcGoogle } from "react-icons/fc";
-import logoPath from "@assets/WhatsApp Image 2025-10-14 at 09.32.15_1761927208177.jpeg";
+import { useLocation } from "wouter";
+// import logoPath from "@assets/WhatsApp Image 2025-10-14 at 09.32.15_1761927208177.jpeg";
 
 export default function Login() {
   const [, setLocation] = useLocation();
@@ -15,13 +18,35 @@ export default function Login() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [rememberMe, setRememberMe] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
-  const handleLogin = () => {
-    setLocation("/dashboard");
+  const handleLogin = async () => {
+    const response = await apiRequest("POST", "login", {
+      email,
+      password,
+      type: activeTab,
+      rememberMe,
+    });
+    if (response.success) {
+      setLocation("/dashboard");
+    } else {
+      setError(response.message || "Login failed");
+    }
   };
 
-  const handleGoogleLogin = () => {
-    setLocation("/dashboard");
+  const handleGoogleLogin = async () => {
+    const result = await signInWithPopup(auth, provider);
+    const idToken = await result.user.getIdToken();
+    const response = await apiRequest("POST", "google-login", {
+      email: result.user.email,
+      name: result.user.displayName,
+      idToken: idToken,
+      type: "agent",
+      rememberMe,
+    });
+    if (response.success) {
+      setLocation("/dashboard");
+    }
   };
 
   return (
@@ -33,8 +58,13 @@ export default function Login() {
             <span className="text-blue-600">BDC</span>
             <span className="text-blue-600"> Professionals</span>
           </span>
-          <img src={logoPath} alt="Logo" className="h-10 w-10 rounded-full" />
+          {/* <img src={logoPath} alt="Logo" className="h-10 w-10 rounded-full" /> */}
         </div>
+        {error && (
+          <div className="mb-4 p-3 text-sm text-red-700 bg-red-100 rounded-md">
+            {error}
+          </div>
+        )}
 
         {/* Login Card */}
         <Card className="shadow-lg">
@@ -93,7 +123,11 @@ export default function Login() {
                 className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700"
                 data-testid="button-toggle-password"
               >
-                {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                {showPassword ? (
+                  <EyeOff className="h-4 w-4" />
+                ) : (
+                  <Eye className="h-4 w-4" />
+                )}
               </button>
             </div>
 

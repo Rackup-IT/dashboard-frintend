@@ -1,15 +1,41 @@
-import { useState, useEffect } from "react";
-import { Link, useLocation } from "wouter";
-import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { Card, CardContent } from "@/components/ui/card";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { Input } from "@/components/ui/input";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { MoreHorizontal, Plus, Eye, Edit, Calendar, Trash2 } from "lucide-react";
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
-import { dealerListStore, type DealerItem } from "@/lib/dealerListStore";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
 import { useToast } from "@/hooks/use-toast";
+import { type DealerItem } from "@/lib/dealerListStore";
+import { apiRequest } from "@/lib/queryClient";
+import {
+  Calendar,
+  Edit,
+  Eye,
+  MoreHorizontal,
+  Plus,
+  Trash2,
+} from "lucide-react";
+import { useEffect, useState } from "react";
+import { Link, useLocation } from "wouter";
 
 export default function DealerList() {
   const [search, setSearch] = useState("");
@@ -23,15 +49,18 @@ export default function DealerList() {
   }, []);
 
   const loadDealers = () => {
-    setDealers(dealerListStore.getDealers());
+    const res = apiRequest("GET", "dealer/get-all").then((data) => {
+      // console.log(data);
+      setDealers(data.dealers);
+    });
   };
 
-  const filteredDealers = dealers.filter(dealer =>
-    dealer.name.toLowerCase().includes(search.toLowerCase())
+  const filteredDealers = dealers.filter((dealer) =>
+    dealer.dealerName.toLowerCase().includes(search.toLowerCase())
   );
 
   const handleStatusToggle = (id: number) => {
-    dealerListStore.toggleStatus(id);
+    // dealerListStore.toggleStatus(id);
     loadDealers();
   };
 
@@ -49,7 +78,7 @@ export default function DealerList() {
 
   const handleDelete = (id: number) => {
     if (confirm("Are you sure you want to delete this dealer?")) {
-      dealerListStore.deleteDealer(id);
+      apiRequest("DELETE", `dealer/delete/${id}`).then(() => {});
       loadDealers();
       toast({
         title: "Success",
@@ -92,7 +121,7 @@ export default function DealerList() {
           </Select>
           <span className="text-sm text-gray-600">entries</span>
         </div>
-        
+
         <div className="flex items-center gap-2">
           <span className="text-sm text-gray-600">Search:</span>
           <Input
@@ -120,40 +149,58 @@ export default function DealerList() {
             </TableHeader>
             <TableBody>
               {filteredDealers.map((dealer, index) => (
-                <TableRow key={dealer.id}>
+                <TableRow key={dealer._id}>
                   <TableCell>{index + 1}</TableCell>
-                  <TableCell className="font-medium">{dealer.name}</TableCell>
+                  <TableCell className="font-medium">
+                    {dealer.dealerName}
+                  </TableCell>
                   <TableCell>{dealer.type.join(" ")}</TableCell>
-                  <TableCell>{dealer.timezone || '-'}</TableCell>
+                  <TableCell>{dealer.timezone || "-"}</TableCell>
                   <TableCell>
                     <Switch
                       checked={dealer.status}
-                      onCheckedChange={() => handleStatusToggle(dealer.id)}
+                      onCheckedChange={() => handleStatusToggle(dealer._id)}
                       className="data-[state=checked]:bg-green-500 data-[state=unchecked]:bg-red-500"
-                      data-testid={`switch-status-${dealer.id}`}
+                      data-testid={`switch-status-${dealer._id}`}
                     />
                   </TableCell>
                   <TableCell>
                     <DropdownMenu>
                       <DropdownMenuTrigger asChild>
-                        <Button variant="ghost" size="sm" data-testid={`button-action-${dealer.id}`}>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          data-testid={`button-action-${dealer._id}`}
+                        >
                           <MoreHorizontal className="h-4 w-4" />
                         </Button>
                       </DropdownMenuTrigger>
                       <DropdownMenuContent align="end">
-                        <DropdownMenuItem onClick={() => handleEdit(dealer.id)} data-testid={`menu-edit-${dealer.id}`}>
+                        <DropdownMenuItem
+                          onClick={() => handleEdit(dealer._id)}
+                          data-testid={`menu-edit-${dealer._id}`}
+                        >
                           <Edit className="mr-2 h-4 w-4" />
                           Edit
                         </DropdownMenuItem>
-                        <DropdownMenuItem onClick={() => handleView(dealer.id)} data-testid={`menu-view-${dealer.id}`}>
+                        <DropdownMenuItem
+                          onClick={() => handleView(dealer._id)}
+                          data-testid={`menu-view-${dealer._id}`}
+                        >
                           <Eye className="mr-2 h-4 w-4" />
                           View
                         </DropdownMenuItem>
-                        <DropdownMenuItem onClick={() => handleSchedule(dealer.id)} data-testid={`menu-schedule-${dealer.id}`}>
+                        <DropdownMenuItem
+                          onClick={() => handleSchedule(dealer._id)}
+                          data-testid={`menu-schedule-${dealer._id}`}
+                        >
                           <Calendar className="mr-2 h-4 w-4" />
                           Schedule
                         </DropdownMenuItem>
-                        <DropdownMenuItem onClick={() => handleDelete(dealer.id)} data-testid={`menu-delete-${dealer.id}`}>
+                        <DropdownMenuItem
+                          onClick={() => handleDelete(dealer._id)}
+                          data-testid={`menu-delete-${dealer._id}`}
+                        >
                           <Trash2 className="mr-2 h-4 w-4" />
                           Delete
                         </DropdownMenuItem>
@@ -176,11 +223,21 @@ export default function DealerList() {
           <Button variant="outline" size="sm" disabled>
             Previous
           </Button>
-          <Button size="sm" className="bg-blue-600 text-white">1</Button>
-          <Button variant="outline" size="sm">2</Button>
-          <Button variant="outline" size="sm">3</Button>
-          <Button variant="outline" size="sm">4</Button>
-          <Button variant="outline" size="sm">5</Button>
+          <Button size="sm" className="bg-blue-600 text-white">
+            1
+          </Button>
+          <Button variant="outline" size="sm">
+            2
+          </Button>
+          <Button variant="outline" size="sm">
+            3
+          </Button>
+          <Button variant="outline" size="sm">
+            4
+          </Button>
+          <Button variant="outline" size="sm">
+            5
+          </Button>
           <span className="text-gray-500">...</span>
           <Button variant="outline" size="sm">
             Next

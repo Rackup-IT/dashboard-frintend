@@ -1,28 +1,31 @@
+import { Button } from "@/components/ui/button";
+import {
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
+} from "@/components/ui/collapsible";
+import { cn } from "@/lib/utils";
+import {
+  Bell,
+  Building2,
+  ChevronDown,
+  ChevronRight,
+  Clock,
+  Database,
+  Info,
+  KeyRound,
+  List,
+  MessageSquare,
+  Settings as SettingsIcon,
+  Target,
+  Trophy,
+  User,
+  UserCheck,
+  Users,
+} from "lucide-react";
 import { useState } from "react";
 import { Link, useLocation } from "wouter";
-import { Button } from "@/components/ui/button";
-import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
-import {
-  BarChart3,
-  Info,
-  Bell,
-  User,
-  Users,
-  Settings as SettingsIcon,
-  ChevronRight,
-  ChevronDown,
-  Building2,
-  UserCheck,
-  List,
-  Target,
-  Database,
-  KeyRound,
-  MessageSquare,
-  Clock,
-  Trophy,
-} from "lucide-react";
-import { cn } from "@/lib/utils";
-import companyLogo from "@assets/WhatsApp Image 2025-10-14 at 09.32.15_1761927208177.jpeg";
+// import companyLogo from "@assets/WhatsApp Image 2025-10-14 at 09.32.15_1761927208177.jpeg";
 
 interface SidebarProps {
   open: boolean;
@@ -59,7 +62,11 @@ const adminItems = [
   { href: "/admin/department-list", label: "Department List", icon: List },
   { href: "/admin/scenario-list", label: "Scenario List", icon: Target },
   { href: "/admin/lead-source", label: "Lead Source", icon: Database },
-  { href: "/admin/dealership-logins", label: "Dealership Logins", icon: KeyRound },
+  {
+    href: "/admin/dealership-logins",
+    label: "Dealership Logins",
+    icon: KeyRound,
+  },
   { href: "/admin/roles", label: "Role & Permission", icon: KeyRound },
   { href: "/admin/sms-logs", label: "Sms & Logs", icon: MessageSquare },
   { href: "/admin/pending-sms", label: "Pending Sms", icon: Clock },
@@ -102,12 +109,14 @@ export default function Sidebar({ open, setOpen }: SidebarProps) {
         {/* Logo */}
         <div className="p-4 border-b border-gray-200">
           <div className="flex items-center space-x-3">
-            <img 
-              src={companyLogo} 
-              alt="Company Logo" 
+            {/* <img
+              src={companyLogo}
+              alt="Company Logo"
               className="h-10 w-auto object-contain"
-            />
-            <span className="font-semibold text-lg text-gray-800">BDC Professionals</span>
+            /> */}
+            <span className="font-semibold text-lg text-gray-800">
+              BDC Professionals
+            </span>
           </div>
         </div>
 

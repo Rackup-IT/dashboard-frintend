@@ -10,17 +10,19 @@ async function throwIfResNotOk(res: Response) {
 export async function apiRequest(
   method: string,
   url: string,
-  data?: unknown | undefined,
+  data?: unknown | undefined
 ): Promise<Response> {
-  const res = await fetch(url, {
+  const baseUrl =
+    import.meta.env.VITE_API_URL || "http://localhost:5000/api/v1";
+  const res = await fetch(`${baseUrl}/${url}`, {
     method,
     headers: data ? { "Content-Type": "application/json" } : {},
     body: data ? JSON.stringify(data) : undefined,
     credentials: "include",
   });
-
-  await throwIfResNotOk(res);
-  return res;
+  // await throwIfResNotOk(res);
+  const responseData = await res.json();
+  return responseData;
 }
 
 type UnauthorizedBehavior = "returnNull" | "throw";
