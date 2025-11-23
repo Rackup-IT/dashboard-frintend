@@ -50,7 +50,6 @@ export default function DealerList() {
 
   const loadDealers = () => {
     const res = apiRequest("GET", "dealer/get-all").then((data) => {
-      // console.log(data);
       setDealers(data.dealers);
     });
   };
@@ -59,8 +58,9 @@ export default function DealerList() {
     dealer.dealerName.toLowerCase().includes(search.toLowerCase())
   );
 
-  const handleStatusToggle = (id: number) => {
-    // dealerListStore.toggleStatus(id);
+  const handleStatusToggle = (id: string) => {
+    console.log("Toggling status for dealer ID:", id);
+    apiRequest("PATCH", `dealer/toggle-status/${id}`).then(() => {});
     loadDealers();
   };
 
