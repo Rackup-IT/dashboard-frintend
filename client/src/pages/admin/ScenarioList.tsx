@@ -1,36 +1,41 @@
-import { useState } from "react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import Pagination from "@/components/common/Pagination";
 import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import { apiRequest } from "@/lib/queryClient";
 import { Plus } from "lucide-react";
+import { useEffect, useState } from "react";
 
 interface Scenario {
-  id: number;
+  _id: string;
   name: string;
   department: string;
 }
 
-const departments = ["Sales", "SZS", "Data Mining", "Campaign", "Follow Up", "Confirmations"];
-
-const initialScenarios: Scenario[] = [
-  { id: 1, name: "New", department: "Sales" },
-  { id: 2, name: "Used", department: "Sales" },
-  { id: 3, name: "Open To Options", department: "Sales" },
-  { id: 4, name: "Buyback", department: "Sales" },
-  { id: 5, name: "Unsold", department: "Sales" },
-  { id: 6, name: "Information Day", department: "Sales" },
-  { id: 7, name: "Walking Over", department: "SZS" },
-  { id: 8, name: "In Waiting Room", department: "SZS" },
-  { id: 9, name: "Upon Pick Up", department: "SZS" },
-  { id: 10, name: "Upcoming Service Appointment", department: "SZS" },
-];
-
 export default function ScenarioList() {
-  const [scenarios, setScenarios] = useState<Scenario[]>(initialScenarios);
+  const [scenarios, setScenarios] = useState<Scenario[]>([]);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingScenario, setEditingScenario] = useState<Scenario | null>(null);
   const [scenarioName, setScenarioName] = useState("");
@@ -38,6 +43,14 @@ export default function ScenarioList() {
   const [entriesPerPage, setEntriesPerPage] = useState("10");
   const [searchTerm, setSearchTerm] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+  const [departments, setDepartments] = useState<
+    { _id: string; name: string }[]
+  >([]);
+
+  useEffect(() => {
+    loadScenarios();
+  }, [currentPage, entriesPerPage]);
 
   const handleAdd = () => {
     setEditingScenario(null);
@@ -45,11 +58,22 @@ export default function ScenarioList() {
     setSelectedDepartment("");
     setIsDialogOpen(true);
   };
+  const loadScenarios = () => {
+    apiRequest(
+      "GET",
+      `department/scenario/get-all?page=${currentPage}&limit=${entriesPerPage}
+    `
+    ).then((data) => {
+      setScenarios(data.scenarios);
+      setTotalPages(data.totalPages);
+      setDepartments(data.departments);
+    });
+  };
 
   const handleEdit = (scenario: Scenario) => {
     setEditingScenario(scenario);
     setScenarioName(scenario.name);
-    setSelectedDepartment(scenario.department);
+    setSelectedDepartment(scenario.department._id);
     setIsDialogOpen(true);
   };
 
@@ -58,21 +82,24 @@ export default function ScenarioList() {
 
     if (editingScenario) {
       // Edit existing scenario
-      setScenarios(prev =>
-        prev.map(scenario =>
-          scenario.id === editingScenario.id
-            ? { ...scenario, name: scenarioName, department: selectedDepartment }
-            : scenario
-        )
-      );
-    } else {
-      // Add new scenario
-      const newScenario: Scenario = {
-        id: Math.max(...scenarios.map(s => s.id), 0) + 1,
+      apiRequest("PUT", `department/scenario/update/${editingScenario._id}`, {
         name: scenarioName,
         department: selectedDepartment,
-      };
-      setScenarios(prev => [...prev, newScenario]);
+      }).then((data) => {
+        setScenarios((prev) =>
+          prev.map((scen) =>
+            scen._id === editingScenario._id ? data.scenario : scen
+          )
+        );
+      });
+    } else {
+      // Add new scenario
+      apiRequest("POST", "department/scenario/create", {
+        name: scenarioName,
+        department: selectedDepartment,
+      }).then((data) => {
+        setScenarios((prev) => [...prev, data.scenario]);
+      });
     }
 
     setIsDialogOpen(false);
@@ -82,7 +109,9 @@ export default function ScenarioList() {
   };
 
   const handleDelete = (id: number) => {
-    setScenarios(prev => prev.filter(scenario => scenario.id !== id));
+    apiRequest("DELETE", `department/scenario/delete/${id}`).then(() => {
+      setScenarios((prev) => prev.filter((scen) => scen._id !== id));
+    });
   };
 
   const handleClose = () => {
@@ -93,16 +122,11 @@ export default function ScenarioList() {
   };
 
   // Filter scenarios based on search
-  const filteredScenarios = scenarios.filter(scenario =>
-    scenario.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    scenario.department.toLowerCase().includes(searchTerm.toLowerCase())
+  const filteredScenarios = scenarios.filter(
+    (scenario) =>
+      scenario.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      scenario.department.name.toLowerCase().includes(searchTerm.toLowerCase())
   );
-
-  // Pagination
-  const totalPages = Math.ceil(filteredScenarios.length / parseInt(entriesPerPage));
-  const startIndex = (currentPage - 1) * parseInt(entriesPerPage);
-  const endIndex = startIndex + parseInt(entriesPerPage);
-  const currentScenarios = filteredScenarios.slice(startIndex, endIndex);
 
   return (
     <div className="space-y-6">
@@ -115,7 +139,7 @@ export default function ScenarioList() {
                 Dashboard / Scenario List
               </div>
             </div>
-            <Button 
+            <Button
               onClick={handleAdd}
               className="bg-blue-600 hover:bg-blue-700 text-white"
               data-testid="button-add-scenario"
@@ -131,7 +155,10 @@ export default function ScenarioList() {
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
                 <span className="text-sm">Show</span>
-                <Select value={entriesPerPage} onValueChange={setEntriesPerPage}>
+                <Select
+                  value={entriesPerPage}
+                  onValueChange={setEntriesPerPage}
+                >
                   <SelectTrigger className="w-20" data-testid="select-entries">
                     <SelectValue />
                   </SelectTrigger>
@@ -169,26 +196,32 @@ export default function ScenarioList() {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {currentScenarios.map((scenario, index) => (
-                    <TableRow key={scenario.id}>
-                      <TableCell className="text-sm">{startIndex + index + 1}</TableCell>
+                  {filteredScenarios.map((scenario, index) => (
+                    <TableRow key={scenario._id}>
+                      <TableCell className="text-sm">
+                        {(currentPage - 1) * parseInt(entriesPerPage) +
+                          index +
+                          1}
+                      </TableCell>
                       <TableCell className="text-sm">{scenario.name}</TableCell>
-                      <TableCell className="text-sm">{scenario.department}</TableCell>
+                      <TableCell className="text-sm">
+                        {scenario.department.name}
+                      </TableCell>
                       <TableCell>
                         <div className="flex gap-2">
                           <Button
                             size="sm"
                             className="bg-yellow-500 hover:bg-yellow-600 text-white"
                             onClick={() => handleEdit(scenario)}
-                            data-testid={`button-edit-${scenario.id}`}
+                            data-testid={`button-edit-${scenario._id}`}
                           >
                             Edit
                           </Button>
                           <Button
                             size="sm"
                             className="bg-red-600 hover:bg-red-700 text-white"
-                            onClick={() => handleDelete(scenario.id)}
-                            data-testid={`button-delete-${scenario.id}`}
+                            onClick={() => handleDelete(scenario._id)}
+                            data-testid={`button-delete-${scenario._id}`}
                           >
                             Delete
                           </Button>
@@ -203,59 +236,24 @@ export default function ScenarioList() {
             {/* Pagination */}
             <div className="flex items-center justify-between">
               <div className="text-sm text-gray-500">
-                Showing {startIndex + 1} to {Math.min(endIndex, filteredScenarios.length)} of {filteredScenarios.length} entries
+                Showing{" "}
+                {Math.min(
+                  (currentPage - 1) * parseInt(entriesPerPage) + 1,
+                  scenarios.length
+                )}{" "}
+                to{" "}
+                {Math.min(
+                  currentPage * parseInt(entriesPerPage),
+                  scenarios.length
+                )}{" "}
+                of {scenarios.length} entries
               </div>
-              
-              <div className="flex items-center gap-2">
-                <Button 
-                  variant="outline" 
-                  size="sm"
-                  onClick={() => setCurrentPage(Math.max(1, currentPage - 1))}
-                  disabled={currentPage === 1}
-                  data-testid="button-previous"
-                >
-                  Previous
-                </Button>
-                
-                {currentPage > 1 && (
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => setCurrentPage(currentPage - 1)}
-                  >
-                    {currentPage - 1}
-                  </Button>
-                )}
-                
-                <Button
-                  variant="default"
-                  size="sm"
-                  className="bg-blue-600 text-white"
-                  data-testid={`button-page-${currentPage}`}
-                >
-                  {currentPage}
-                </Button>
-                
-                {currentPage < totalPages && (
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => setCurrentPage(currentPage + 1)}
-                  >
-                    {currentPage + 1}
-                  </Button>
-                )}
-                
-                <Button 
-                  variant="outline" 
-                  size="sm"
-                  onClick={() => setCurrentPage(Math.min(totalPages, currentPage + 1))}
-                  disabled={currentPage === totalPages}
-                  data-testid="button-next"
-                >
-                  Next
-                </Button>
-              </div>
+
+              <Pagination
+                currentPage={currentPage}
+                totalPages={totalPages}
+                onPageChange={setCurrentPage}
+              />
             </div>
           </div>
         </CardContent>
@@ -263,13 +261,16 @@ export default function ScenarioList() {
 
       {/* Add/Edit Scenario Dialog */}
       <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-        <DialogContent className="max-w-md" data-testid="dialog-add-edit-scenario">
+        <DialogContent
+          className="max-w-md"
+          data-testid="dialog-add-edit-scenario"
+        >
           <DialogHeader>
             <DialogTitle className="text-lg font-semibold">
               {editingScenario ? "Edit Scenario" : "Add Scenario"}
             </DialogTitle>
           </DialogHeader>
-          
+
           <div className="space-y-4 py-4">
             <div className="space-y-2">
               <Label htmlFor="scenario-name">Name</Label>
@@ -284,14 +285,20 @@ export default function ScenarioList() {
 
             <div className="space-y-2">
               <Label htmlFor="scenario-department">Department</Label>
-              <Select value={selectedDepartment} onValueChange={setSelectedDepartment}>
-                <SelectTrigger id="scenario-department" data-testid="select-department">
+              <Select
+                value={selectedDepartment}
+                onValueChange={setSelectedDepartment}
+              >
+                <SelectTrigger
+                  id="scenario-department"
+                  data-testid="select-department"
+                >
                   <SelectValue placeholder="Select" />
                 </SelectTrigger>
                 <SelectContent>
                   {departments.map((dept) => (
-                    <SelectItem key={dept} value={dept}>
-                      {dept}
+                    <SelectItem key={dept._id} value={dept._id}>
+                      {dept.name}
                     </SelectItem>
                   ))}
                 </SelectContent>
@@ -300,7 +307,7 @@ export default function ScenarioList() {
           </div>
 
           <div className="flex justify-end gap-2">
-            <Button 
+            <Button
               variant="outline"
               onClick={handleClose}
               className="bg-gray-500 hover:bg-gray-600 text-white"
@@ -308,7 +315,7 @@ export default function ScenarioList() {
             >
               Close
             </Button>
-            <Button 
+            <Button
               onClick={handleSave}
               className="bg-blue-600 hover:bg-blue-700 text-white"
               disabled={!scenarioName.trim() || !selectedDepartment}

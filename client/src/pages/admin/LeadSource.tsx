@@ -1,39 +1,61 @@
-import { useState } from "react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import Pagination from "@/components/common/Pagination";
 import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import { apiRequest } from "@/lib/queryClient";
 import { Plus } from "lucide-react";
+import { useEffect, useState } from "react";
 
 interface LeadSource {
-  id: number;
+  _id: number;
   name: string;
 }
 
-const initialLeadSources: LeadSource[] = [
-  { id: 1, name: "Internet" },
-  { id: 2, name: "Phone Up" },
-  { id: 3, name: "Service Drive" },
-  { id: 4, name: "Database" },
-  { id: 5, name: "Cargurus" },
-  { id: 6, name: "Carfax" },
-  { id: 7, name: "Dealer.com" },
-  { id: 8, name: "Dealer Website" },
-  { id: 9, name: "Autotrader" },
-  { id: 10, name: "Truecar" },
-];
-
 export default function LeadSource() {
-  const [leadSources, setLeadSources] = useState<LeadSource[]>(initialLeadSources);
+  const [leadSources, setLeadSources] = useState<LeadSource[]>([]);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
-  const [editingLeadSource, setEditingLeadSource] = useState<LeadSource | null>(null);
+  const [editingLeadSource, setEditingLeadSource] = useState<LeadSource | null>(
+    null
+  );
   const [leadSourceName, setLeadSourceName] = useState("");
   const [entriesPerPage, setEntriesPerPage] = useState("10");
   const [searchTerm, setSearchTerm] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+  useEffect(() => {
+    loadLeadSources();
+  }, [currentPage, entriesPerPage]);
+  const loadLeadSources = () => {
+    apiRequest(
+      "GET",
+      `lead/get-all?page=${currentPage}&limit=${entriesPerPage}`
+    ).then((data) => {
+      setLeadSources(data.leadSources);
+      setTotalPages(data.totalPages);
+    });
+  };
 
   const handleAdd = () => {
     setEditingLeadSource(null);
@@ -52,20 +74,22 @@ export default function LeadSource() {
 
     if (editingLeadSource) {
       // Edit existing lead source
-      setLeadSources(prev =>
-        prev.map(source =>
-          source.id === editingLeadSource.id
-            ? { ...source, name: leadSourceName }
-            : source
-        )
-      );
+      apiRequest("PATCH", `lead/update/${editingLeadSource._id}`, {
+        name: leadSourceName,
+      }).then((data) => {
+        setLeadSources((prev) =>
+          prev.map((source) =>
+            source._id === editingLeadSource._id ? data.leadSource : source
+          )
+        );
+      });
     } else {
       // Add new lead source
-      const newLeadSource: LeadSource = {
-        id: Math.max(...leadSources.map(s => s.id), 0) + 1,
-        name: leadSourceName,
-      };
-      setLeadSources(prev => [...prev, newLeadSource]);
+      apiRequest("POST", "lead/create", { name: leadSourceName }).then(
+        (data) => {
+          setLeadSources((prev) => [...prev, data.leadSource]);
+        }
+      );
     }
 
     setIsDialogOpen(false);
@@ -74,7 +98,9 @@ export default function LeadSource() {
   };
 
   const handleDelete = (id: number) => {
-    setLeadSources(prev => prev.filter(source => source.id !== id));
+    apiRequest("DELETE", `lead/delete/${id}`).then(() => {
+      setLeadSources((prev) => prev.filter((source) => source._id !== id));
+    });
   };
 
   const handleClose = () => {
@@ -84,15 +110,9 @@ export default function LeadSource() {
   };
 
   // Filter lead sources based on search
-  const filteredLeadSources = leadSources.filter(source =>
+  const filteredLeadSources = leadSources.filter((source) =>
     source.name.toLowerCase().includes(searchTerm.toLowerCase())
   );
-
-  // Pagination
-  const totalPages = Math.ceil(filteredLeadSources.length / parseInt(entriesPerPage));
-  const startIndex = (currentPage - 1) * parseInt(entriesPerPage);
-  const endIndex = startIndex + parseInt(entriesPerPage);
-  const currentLeadSources = filteredLeadSources.slice(startIndex, endIndex);
 
   return (
     <div className="space-y-6">
@@ -105,7 +125,7 @@ export default function LeadSource() {
                 Dashboard / Lead Source List
               </div>
             </div>
-            <Button 
+            <Button
               onClick={handleAdd}
               className="bg-blue-600 hover:bg-blue-700 text-white"
               data-testid="button-add-lead-source"
@@ -121,7 +141,10 @@ export default function LeadSource() {
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
                 <span className="text-sm">Show</span>
-                <Select value={entriesPerPage} onValueChange={setEntriesPerPage}>
+                <Select
+                  value={entriesPerPage}
+                  onValueChange={setEntriesPerPage}
+                >
                   <SelectTrigger className="w-20" data-testid="select-entries">
                     <SelectValue />
                   </SelectTrigger>
@@ -158,25 +181,27 @@ export default function LeadSource() {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {currentLeadSources.map((leadSource, index) => (
-                    <TableRow key={leadSource.id}>
-                      <TableCell className="text-sm">{startIndex + index + 1}</TableCell>
-                      <TableCell className="text-sm">{leadSource.name}</TableCell>
+                  {filteredLeadSources.map((leadSource, index) => (
+                    <TableRow key={leadSource._id}>
+                      <TableCell className="text-sm">{index + 1}</TableCell>
+                      <TableCell className="text-sm">
+                        {leadSource.name}
+                      </TableCell>
                       <TableCell>
                         <div className="flex gap-2">
                           <Button
                             size="sm"
                             className="bg-yellow-500 hover:bg-yellow-600 text-white"
                             onClick={() => handleEdit(leadSource)}
-                            data-testid={`button-edit-${leadSource.id}`}
+                            data-testid={`button-edit-${leadSource._id}`}
                           >
                             Edit
                           </Button>
                           <Button
                             size="sm"
                             className="bg-red-600 hover:bg-red-700 text-white"
-                            onClick={() => handleDelete(leadSource.id)}
-                            data-testid={`button-delete-${leadSource.id}`}
+                            onClick={() => handleDelete(leadSource._id)}
+                            data-testid={`button-delete-${leadSource._id}`}
                           >
                             Delete
                           </Button>
@@ -191,59 +216,24 @@ export default function LeadSource() {
             {/* Pagination */}
             <div className="flex items-center justify-between">
               <div className="text-sm text-gray-500">
-                Showing {startIndex + 1} to {Math.min(endIndex, filteredLeadSources.length)} of {filteredLeadSources.length} entries
+                Showing{" "}
+                {Math.min(
+                  (currentPage - 1) * parseInt(entriesPerPage) + 1,
+                  leadSources.length
+                )}{" "}
+                to{" "}
+                {Math.min(
+                  currentPage * parseInt(entriesPerPage),
+                  leadSources.length
+                )}{" "}
+                of {leadSources.length} entries
               </div>
-              
-              <div className="flex items-center gap-2">
-                <Button 
-                  variant="outline" 
-                  size="sm"
-                  onClick={() => setCurrentPage(Math.max(1, currentPage - 1))}
-                  disabled={currentPage === 1}
-                  data-testid="button-previous"
-                >
-                  Previous
-                </Button>
-                
-                {currentPage > 1 && (
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => setCurrentPage(currentPage - 1)}
-                  >
-                    {currentPage - 1}
-                  </Button>
-                )}
-                
-                <Button
-                  variant="default"
-                  size="sm"
-                  className="bg-blue-600 text-white"
-                  data-testid={`button-page-${currentPage}`}
-                >
-                  {currentPage}
-                </Button>
-                
-                {currentPage < totalPages && (
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => setCurrentPage(currentPage + 1)}
-                  >
-                    {currentPage + 1}
-                  </Button>
-                )}
-                
-                <Button 
-                  variant="outline" 
-                  size="sm"
-                  onClick={() => setCurrentPage(Math.min(totalPages, currentPage + 1))}
-                  disabled={currentPage === totalPages}
-                  data-testid="button-next"
-                >
-                  Next
-                </Button>
-              </div>
+
+              <Pagination
+                currentPage={currentPage}
+                totalPages={totalPages}
+                onPageChange={setCurrentPage}
+              />
             </div>
           </div>
         </CardContent>
@@ -251,13 +241,16 @@ export default function LeadSource() {
 
       {/* Add/Edit Lead Source Dialog */}
       <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-        <DialogContent className="max-w-md" data-testid="dialog-add-edit-lead-source">
+        <DialogContent
+          className="max-w-md"
+          data-testid="dialog-add-edit-lead-source"
+        >
           <DialogHeader>
             <DialogTitle className="text-lg font-semibold">
               {editingLeadSource ? "Edit Lead Source" : "Add Lead Source"}
             </DialogTitle>
           </DialogHeader>
-          
+
           <div className="space-y-4 py-4">
             <div className="space-y-2">
               <Label htmlFor="lead-source-name">Name</Label>
@@ -272,7 +265,7 @@ export default function LeadSource() {
           </div>
 
           <div className="flex justify-end gap-2">
-            <Button 
+            <Button
               variant="outline"
               onClick={handleClose}
               className="bg-gray-500 hover:bg-gray-600 text-white"
@@ -280,7 +273,7 @@ export default function LeadSource() {
             >
               Close
             </Button>
-            <Button 
+            <Button
               onClick={handleSave}
               className="bg-blue-600 hover:bg-blue-700 text-white"
               disabled={!leadSourceName.trim()}
