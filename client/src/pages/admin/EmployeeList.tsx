@@ -1,3 +1,4 @@
+import Pagination from "@/components/common/Pagination";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import {
@@ -23,87 +24,31 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { apiRequest } from "@/lib/queryClient";
 import { MoreHorizontal, Plus } from "lucide-react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Link } from "wouter";
 
 export default function EmployeeList() {
   const [search, setSearch] = useState("");
   const [entriesPerPage, setEntriesPerPage] = useState("10");
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
 
   // Sample data matching the screenshot with state management
-  const [employees, setEmployees] = useState([
-    {
-      id: 1,
-      name: "Admin Admin",
-      email: "manager@truebdc.com",
-      phone: "+8583282889",
-      status: true,
-    },
-    {
-      id: 5,
-      name: "Rafael Hossain",
-      email: "rafael@truebdc.com",
-      phone: "+57379428950",
-      status: false,
-    },
-    {
-      id: 6,
-      name: "Maria Morozova",
-      email: "maria@truebdc.com",
-      phone: "+57304387171",
-      status: true,
-    },
-    {
-      id: 7,
-      name: "Jeff Cardona",
-      email: "jeff@truebdc.com",
-      phone: "+57306503081",
-      status: true,
-    },
-    {
-      id: 8,
-      name: "Genesis Jimenez",
-      email: "genesis@truebdc.com",
-      phone: "+57387996918",
-      status: false,
-    },
-    {
-      id: 9,
-      name: "Amanda Jones",
-      email: "amanda@truebdc.com",
-      phone: "+1252070404",
-      status: true,
-    },
-    {
-      id: 10,
-      name: "David Santana",
-      email: "david.santana@truebdc.com",
-      phone: "+573315278533",
-      status: false,
-    },
-    {
-      id: 11,
-      name: "Santiago Rodom",
-      email: "santiago@truebdc.com",
-      phone: "+573224850181",
-      status: true,
-    },
-    {
-      id: 12,
-      name: "Santiago Zenizo",
-      email: "santiagozentizo@truebdc.com",
-      phone: "+573344946266",
-      status: false,
-    },
-    {
-      id: 13,
-      name: "Sam Urisao",
-      email: "samuel@truebdc.com",
-      phone: "+573244278206",
-      status: false,
-    },
-  ]);
+  const [employees, setEmployees] = useState([]);
+  useEffect(() => {
+    loadEmployees();
+  }, [currentPage, entriesPerPage]);
+
+  const loadEmployees = () => {
+    apiRequest("GET", `users?page=${currentPage}&limit=${entriesPerPage}`).then(
+      (data) => {
+        setEmployees(data.users);
+        setTotalPages(data.totalPages);
+      }
+    );
+  };
 
   const filteredEmployees = employees.filter(
     (employee) =>
@@ -114,11 +59,17 @@ export default function EmployeeList() {
   const handleStatusToggle = (id: number) => {
     setEmployees((prevEmployees) =>
       prevEmployees.map((employee) =>
-        employee.id === id
+        employee._id === id
           ? { ...employee, status: !employee.status }
           : employee
       )
     );
+    apiRequest("PATCH", `user/status/${id}`).then(() => {
+      loadEmployees();
+    });
+  };
+  const onPageChange = (page: number) => {
+    setCurrentPage(page);
   };
 
   return (
@@ -191,7 +142,7 @@ export default function EmployeeList() {
                   <TableCell>
                     <Switch
                       checked={employee.status}
-                      onCheckedChange={() => handleStatusToggle(employee.id)}
+                      onCheckedChange={() => handleStatusToggle(employee._id)}
                       className="data-[state=checked]:bg-green-500 data-[state=unchecked]:bg-red-500"
                     />
                   </TableCell>
@@ -219,35 +170,20 @@ export default function EmployeeList() {
       {/* Pagination */}
       <div className="flex items-center justify-between">
         <div className="text-sm text-gray-600">
-          Showing 1 to 10 of 77 entries
+          Showing{" "}
+          {Math.min(
+            (currentPage - 1) * parseInt(entriesPerPage) + 1,
+            employees.length
+          )}{" "}
+          to{" "}
+          {Math.min(currentPage * parseInt(entriesPerPage), employees.length)}{" "}
+          of {employees.length} entries
         </div>
-        <div className="flex items-center gap-2">
-          <Button variant="outline" size="sm" disabled>
-            Previous
-          </Button>
-          <Button size="sm" className="bg-blue-600 text-white">
-            1
-          </Button>
-          <Button variant="outline" size="sm">
-            2
-          </Button>
-          <Button variant="outline" size="sm">
-            3
-          </Button>
-          <Button variant="outline" size="sm">
-            4
-          </Button>
-          <Button variant="outline" size="sm">
-            5
-          </Button>
-          <span className="text-gray-500">...</span>
-          <Button variant="outline" size="sm">
-            8
-          </Button>
-          <Button variant="outline" size="sm">
-            Next
-          </Button>
-        </div>
+        <Pagination
+          currentPage={currentPage}
+          totalPages={totalPages}
+          onPageChange={setCurrentPage}
+        />
       </div>
     </div>
   );

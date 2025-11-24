@@ -1,3 +1,4 @@
+import Pagination from "@/components/common/Pagination";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import {
@@ -40,6 +41,9 @@ import { Link, useLocation } from "wouter";
 export default function DealerList() {
   const [search, setSearch] = useState("");
   const [entriesPerPage, setEntriesPerPage] = useState("10");
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+
   const [dealers, setDealers] = useState<DealerItem[]>([]);
   const [, setLocation] = useLocation();
   const { toast } = useToast();
@@ -49,9 +53,16 @@ export default function DealerList() {
   }, []);
 
   const loadDealers = () => {
-    const res = apiRequest("GET", "dealer/get-all").then((data) => {
+    const res = apiRequest(
+      "GET",
+      `dealer/get-all?page=${currentPage}&limit=${entriesPerPage}`
+    ).then((data) => {
       setDealers(data.dealers);
+      setTotalPages(data.totalPages);
     });
+  };
+  const onPageChange = (page: number) => {
+    setCurrentPage(page);
   };
 
   const filteredDealers = dealers.filter((dealer) =>
@@ -217,32 +228,19 @@ export default function DealerList() {
       {/* Pagination */}
       <div className="flex items-center justify-between">
         <div className="text-sm text-gray-600">
-          Showing 1 to 10 of 10 entries
+          Showing{" "}
+          {Math.min(
+            (currentPage - 1) * parseInt(entriesPerPage) + 1,
+            dealers.length
+          )}{" "}
+          to {Math.min(currentPage * parseInt(entriesPerPage), dealers.length)}{" "}
+          of {dealers.length} entries
         </div>
-        <div className="flex items-center gap-2">
-          <Button variant="outline" size="sm" disabled>
-            Previous
-          </Button>
-          <Button size="sm" className="bg-blue-600 text-white">
-            1
-          </Button>
-          <Button variant="outline" size="sm">
-            2
-          </Button>
-          <Button variant="outline" size="sm">
-            3
-          </Button>
-          <Button variant="outline" size="sm">
-            4
-          </Button>
-          <Button variant="outline" size="sm">
-            5
-          </Button>
-          <span className="text-gray-500">...</span>
-          <Button variant="outline" size="sm">
-            Next
-          </Button>
-        </div>
+        <Pagination
+          currentPage={currentPage}
+          totalPages={totalPages}
+          onPageChange={setCurrentPage}
+        />
       </div>
     </div>
   );
