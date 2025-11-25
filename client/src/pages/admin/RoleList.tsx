@@ -1,15 +1,36 @@
-import { useState, useEffect } from "react";
-import { useLocation } from "wouter";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import Pagination from "@/components/common/Pagination";
 import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Dialog,
+  DialogContent,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
-import { Plus } from "lucide-react";
-import { roleStore, type Role } from "@/lib/roleStore";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
 import { useToast } from "@/hooks/use-toast";
+import { apiRequest } from "@/lib/queryClient";
+import { type Role } from "@/lib/roleStore";
+import { Plus } from "lucide-react";
+import { useEffect, useState } from "react";
+import { useLocation } from "wouter";
 
 export default function RoleList() {
   const [, setLocation] = useLocation();
@@ -20,26 +41,23 @@ export default function RoleList() {
   const [currentPage, setCurrentPage] = useState(1);
   const [showAddDialog, setShowAddDialog] = useState(false);
   const [newRoleTitle, setNewRoleTitle] = useState("");
+  const [totalPages, setTotalPages] = useState(1);
 
   useEffect(() => {
     loadRoles();
   }, []);
 
   const loadRoles = () => {
-    setRoles(roleStore.getRoles());
+    apiRequest("GET", "role/get-all").then((data) => {
+      setRoles(data.roles);
+      setTotalPages(data.totalPages);
+    });
   };
 
   const handleAddRole = () => {
-    if (!newRoleTitle.trim()) {
-      toast({
-        title: "Error",
-        description: "Role title is required",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    roleStore.addRole({ title: newRoleTitle, permissions: [] });
+    apiRequest("POST", "role/create", { name: newRoleTitle }).then((data) => {
+      setRoles((prev) => [...prev, data.role]);
+    });
     setNewRoleTitle("");
     setShowAddDialog(false);
     loadRoles();
@@ -54,7 +72,9 @@ export default function RoleList() {
   };
 
   const handleDelete = (id: number) => {
-    roleStore.deleteRole(id);
+    apiRequest("DELETE", `role/delete/${id}`).then(() => {
+      setRoles((prev) => prev.filter((role) => role._id !== id));
+    });
     loadRoles();
     toast({
       title: "Success",
@@ -63,15 +83,9 @@ export default function RoleList() {
   };
 
   // Filter roles based on search
-  const filteredRoles = roles.filter(role =>
-    role.title.toLowerCase().includes(searchTerm.toLowerCase())
+  const filteredRoles = roles.filter((role) =>
+    role.name.toLowerCase().includes(searchTerm.toLowerCase())
   );
-
-  // Pagination
-  const totalPages = Math.ceil(filteredRoles.length / parseInt(entriesPerPage));
-  const startIndex = (currentPage - 1) * parseInt(entriesPerPage);
-  const endIndex = startIndex + parseInt(entriesPerPage);
-  const currentRoles = filteredRoles.slice(startIndex, endIndex);
 
   return (
     <div className="space-y-6">
@@ -84,7 +98,7 @@ export default function RoleList() {
                 Dashboard / Role List
               </div>
             </div>
-            <Button 
+            <Button
               onClick={() => setShowAddDialog(true)}
               className="bg-blue-600 hover:bg-blue-700 text-white"
               data-testid="button-add-role"
@@ -100,7 +114,10 @@ export default function RoleList() {
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
                 <span className="text-sm">Show</span>
-                <Select value={entriesPerPage} onValueChange={setEntriesPerPage}>
+                <Select
+                  value={entriesPerPage}
+                  onValueChange={setEntriesPerPage}
+                >
                   <SelectTrigger className="w-20" data-testid="select-entries">
                     <SelectValue />
                   </SelectTrigger>
@@ -137,18 +154,26 @@ export default function RoleList() {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {currentRoles.map((role) => (
-                    <TableRow key={role.id}>
-                      <TableCell className="text-sm">{role.id}</TableCell>
-                      <TableCell className="text-sm">{role.title}</TableCell>
+                  {filteredRoles.map((role, index) => (
+                    <TableRow key={role._id}>
+                      <TableCell className="text-sm">{index + 1}</TableCell>
+                      <TableCell className="text-sm">{role.name}</TableCell>
                       <TableCell>
                         <Button
                           size="sm"
                           className="bg-yellow-500 hover:bg-yellow-600 text-white mr-2"
-                          onClick={() => handleEdit(role.id)}
-                          data-testid={`button-edit-${role.id}`}
+                          onClick={() => handleEdit(role._id)}
+                          data-testid={`button-edit-${role._id}`}
                         >
                           Edit
+                        </Button>
+                        <Button
+                          size="sm"
+                          className="bg-red-500 hover:bg-red-600 text-white"
+                          onClick={() => handleDelete(role._id)}
+                          data-testid={`button-delete-${role._id}`}
+                        >
+                          Delete
                         </Button>
                       </TableCell>
                     </TableRow>
@@ -160,39 +185,21 @@ export default function RoleList() {
             {/* Pagination */}
             <div className="flex items-center justify-between">
               <div className="text-sm text-gray-500">
-                Showing {startIndex + 1} to {Math.min(endIndex, filteredRoles.length)} of {filteredRoles.length} entries
+                Showing{" "}
+                {Math.min(
+                  (currentPage - 1) * parseInt(entriesPerPage) + 1,
+                  roles.length
+                )}{" "}
+                to{" "}
+                {Math.min(currentPage * parseInt(entriesPerPage), roles.length)}{" "}
+                of {roles.length} entries
               </div>
-              
-              <div className="flex items-center gap-2">
-                <Button 
-                  variant="outline" 
-                  size="sm"
-                  onClick={() => setCurrentPage(Math.max(1, currentPage - 1))}
-                  disabled={currentPage === 1}
-                  data-testid="button-previous"
-                >
-                  Previous
-                </Button>
-                
-                <Button
-                  variant="default"
-                  size="sm"
-                  className="bg-blue-600 text-white"
-                  data-testid={`button-page-${currentPage}`}
-                >
-                  {currentPage}
-                </Button>
-                
-                <Button 
-                  variant="outline" 
-                  size="sm"
-                  onClick={() => setCurrentPage(Math.min(totalPages, currentPage + 1))}
-                  disabled={currentPage === totalPages}
-                  data-testid="button-next"
-                >
-                  Next
-                </Button>
-              </div>
+
+              <Pagination
+                totalPages={totalPages}
+                currentPage={currentPage}
+                onPageChange={setCurrentPage}
+              />
             </div>
           </div>
         </CardContent>
