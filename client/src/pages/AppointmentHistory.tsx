@@ -1,14 +1,37 @@
-import { useState } from "react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Badge } from "@/components/ui/badge";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { MoreHorizontal, Plus, Calendar, X } from "lucide-react";
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import { Calendar, MoreHorizontal, Plus } from "lucide-react";
+import { useState } from "react";
 import { useLocation } from "wouter";
 
 // Sample appointment data with all required fields
@@ -30,7 +53,7 @@ const appointmentData = [
     paymentSource: "Finance",
     comment: "N/A",
     leadSource: "Phone Line Up",
-    language: "English"
+    language: "English",
   },
   {
     id: 2,
@@ -49,7 +72,7 @@ const appointmentData = [
     paymentSource: "Cash",
     comment: "Looking for specific color",
     leadSource: "Website",
-    language: "English"
+    language: "English",
   },
   {
     id: 3,
@@ -68,7 +91,7 @@ const appointmentData = [
     paymentSource: "Finance",
     comment: "Has 2018 Honda Accord for trade",
     leadSource: "Referral",
-    language: "English"
+    language: "English",
   },
   {
     id: 4,
@@ -87,7 +110,7 @@ const appointmentData = [
     paymentSource: "Lease",
     comment: "Interested in work truck package",
     leadSource: "Walk-In",
-    language: "English"
+    language: "English",
   },
   {
     id: 5,
@@ -106,7 +129,7 @@ const appointmentData = [
     paymentSource: "Cash",
     comment: "Oil change and tire rotation",
     leadSource: "Phone Call",
-    language: "English"
+    language: "English",
   },
   {
     id: 6,
@@ -125,7 +148,7 @@ const appointmentData = [
     paymentSource: "Finance",
     comment: "Following up on previous inquiry",
     leadSource: "Previous Customer",
-    language: "Spanish"
+    language: "Spanish",
   },
   {
     id: 7,
@@ -144,7 +167,7 @@ const appointmentData = [
     paymentSource: "Finance",
     comment: "Prefers white or silver",
     leadSource: "Social Media",
-    language: "English"
+    language: "English",
   },
   {
     id: 8,
@@ -163,7 +186,7 @@ const appointmentData = [
     paymentSource: "Cash",
     comment: "N/A",
     leadSource: "Advertisement",
-    language: "English"
+    language: "English",
   },
   {
     id: 9,
@@ -182,7 +205,7 @@ const appointmentData = [
     paymentSource: "Finance",
     comment: "First time buyer",
     leadSource: "Phone Call",
-    language: "English"
+    language: "English",
   },
   {
     id: 10,
@@ -201,19 +224,19 @@ const appointmentData = [
     paymentSource: "Lease",
     comment: "Looking for best fuel economy",
     leadSource: "Website",
-    language: "Spanish"
-  }
+    language: "Spanish",
+  },
 ];
 
 const dealerships = [
   "Downtown Toyota",
-  "Navarre Chevrolet & Cadillac", 
+  "Navarre Chevrolet & Cadillac",
   "Nissan of San Juan Capistrano",
   "All American Chevrolet of Midland",
   "Andrews Auto",
   "Augusta Mitsubishi",
   "Daytona Kia",
-  "Daytona Mitsubishi"
+  "Daytona Mitsubishi",
 ];
 
 export default function AppointmentHistory() {
@@ -223,27 +246,36 @@ export default function AppointmentHistory() {
   const [selectedDealership, setSelectedDealership] = useState("");
   const [entriesPerPage, setEntriesPerPage] = useState("10");
   const [currentPage, setCurrentPage] = useState(1);
-  const [selectedAppointment, setSelectedAppointment] = useState<typeof appointmentData[0] | null>(null);
+  const [selectedAppointment, setSelectedAppointment] = useState<
+    (typeof appointmentData)[0] | null
+  >(null);
   const [isViewDialogOpen, setIsViewDialogOpen] = useState(false);
 
   // Filter appointments based on search criteria
-  const filteredAppointments = appointmentData.filter(appointment => {
-    const matchesSearch = searchTerm === "" || 
-      appointment.customerName.toLowerCase().includes(searchTerm.toLowerCase()) ||
+  const filteredAppointments = appointmentData.filter((appointment) => {
+    const matchesSearch =
+      searchTerm === "" ||
+      appointment.customerName
+        .toLowerCase()
+        .includes(searchTerm.toLowerCase()) ||
       appointment.agent.toLowerCase().includes(searchTerm.toLowerCase()) ||
       appointment.type.toLowerCase().includes(searchTerm.toLowerCase());
-    
-    const matchesPhone = phoneSearch === "" || 
-      appointment.customerPhone.includes(phoneSearch);
-    
-    const matchesDealership = selectedDealership === "" || selectedDealership === "all" || 
+
+    const matchesPhone =
+      phoneSearch === "" || appointment.customerPhone.includes(phoneSearch);
+
+    const matchesDealership =
+      selectedDealership === "" ||
+      selectedDealership === "all" ||
       appointment.dealer === selectedDealership;
 
     return matchesSearch && matchesPhone && matchesDealership;
   });
 
   // Pagination logic
-  const totalPages = Math.ceil(filteredAppointments.length / parseInt(entriesPerPage));
+  const totalPages = Math.ceil(
+    filteredAppointments.length / parseInt(entriesPerPage)
+  );
   const startIndex = (currentPage - 1) * parseInt(entriesPerPage);
   const endIndex = startIndex + parseInt(entriesPerPage);
   const currentAppointments = filteredAppointments.slice(startIndex, endIndex);
@@ -252,7 +284,7 @@ export default function AppointmentHistory() {
     setLocation("/dealer-notification");
   };
 
-  const handleViewAppointment = (appointment: typeof appointmentData[0]) => {
+  const handleViewAppointment = (appointment: (typeof appointmentData)[0]) => {
     setSelectedAppointment(appointment);
     setIsViewDialogOpen(true);
   };
@@ -276,7 +308,11 @@ export default function AppointmentHistory() {
                 </div>
               </div>
             </div>
-            <Button onClick={handleAddAppointment} className="bg-blue-600 hover:bg-blue-700 text-white" data-testid="button-add-appointment">
+            <Button
+              onClick={handleAddAppointment}
+              className="bg-blue-600 hover:bg-blue-700 text-white"
+              data-testid="button-add-appointment"
+            >
               <Plus className="h-4 w-4 mr-2" />
               Appointment
             </Button>
@@ -296,7 +332,7 @@ export default function AppointmentHistory() {
                   data-testid="input-search"
                 />
               </div>
-              
+
               <div className="space-y-2">
                 <Label htmlFor="phone-search">Search by phone number</Label>
                 <Input
@@ -307,24 +343,31 @@ export default function AppointmentHistory() {
                   data-testid="input-phone-search"
                 />
               </div>
-              
+
               <div className="space-y-2">
                 <Label htmlFor="dealership">Dealership</Label>
-                <Select value={selectedDealership} onValueChange={setSelectedDealership}>
+                <Select
+                  value={selectedDealership}
+                  onValueChange={setSelectedDealership}
+                >
                   <SelectTrigger data-testid="select-dealership-filter">
                     <SelectValue placeholder="Dealership" />
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="all">All Dealerships</SelectItem>
                     {dealerships.map((dealer) => (
-                      <SelectItem key={dealer} value={dealer}>{dealer}</SelectItem>
+                      <SelectItem key={dealer} value={dealer}>
+                        {dealer}
+                      </SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
               </div>
-              
+
               <div className="space-y-2">
-                <Label htmlFor="date-range">Select Date Range to Filter Appointments</Label>
+                <Label htmlFor="date-range">
+                  Select Date Range to Filter Appointments
+                </Label>
                 <Input
                   id="date-range"
                   placeholder="Select Date Range to Filter Appointments"
@@ -339,7 +382,10 @@ export default function AppointmentHistory() {
             <div className="flex items-center gap-2">
               <span className="text-sm">Show</span>
               <Select value={entriesPerPage} onValueChange={setEntriesPerPage}>
-                <SelectTrigger className="w-20" data-testid="select-entries-per-page">
+                <SelectTrigger
+                  className="w-20"
+                  data-testid="select-entries-per-page"
+                >
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
@@ -371,35 +417,66 @@ export default function AppointmentHistory() {
                 <TableBody>
                   {currentAppointments.map((appointment) => (
                     <TableRow key={appointment.id}>
-                      <TableCell className="text-sm">{appointment.agent}</TableCell>
+                      <TableCell className="text-sm">
+                        {appointment.agent}
+                      </TableCell>
                       <TableCell>
-                        <Badge 
-                          variant={appointment.type === "Appointment" ? "default" : "secondary"}
-                          className={appointment.type === "Appointment" ? "bg-blue-100 text-blue-800" : "bg-gray-100 text-gray-800"}
+                        <Badge
+                          variant={
+                            appointment.type === "Appointment"
+                              ? "default"
+                              : "secondary"
+                          }
+                          className={
+                            appointment.type === "Appointment"
+                              ? "bg-blue-100 text-blue-800"
+                              : "bg-gray-100 text-gray-800"
+                          }
                         >
                           {appointment.type}
                         </Badge>
                       </TableCell>
-                      <TableCell className="text-sm">{appointment.appointmentDate}</TableCell>
-                      <TableCell className="text-sm">{appointment.appointmentTime}</TableCell>
-                      <TableCell className="text-sm">{appointment.customerName}</TableCell>
-                      <TableCell className="text-sm">{appointment.customerPhone}</TableCell>
-                      <TableCell className="text-sm">{appointment.dealer}</TableCell>
-                      <TableCell className="text-sm">{appointment.createdAt}</TableCell>
+                      <TableCell className="text-sm">
+                        {appointment.appointmentDate}
+                      </TableCell>
+                      <TableCell className="text-sm">
+                        {appointment.appointmentTime}
+                      </TableCell>
+                      <TableCell className="text-sm">
+                        {appointment.customerName}
+                      </TableCell>
+                      <TableCell className="text-sm">
+                        {appointment.customerPhone}
+                      </TableCell>
+                      <TableCell className="text-sm">
+                        {appointment.dealer}
+                      </TableCell>
+                      <TableCell className="text-sm">
+                        {appointment.createdAt}
+                      </TableCell>
                       <TableCell>
                         <DropdownMenu>
                           <DropdownMenuTrigger asChild>
-                            <Button variant="ghost" size="sm" data-testid={`button-action-${appointment.id}`}>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              data-testid={`button-action-${appointment.id}`}
+                            >
                               <MoreHorizontal className="h-4 w-4" />
                             </Button>
                           </DropdownMenuTrigger>
                           <DropdownMenuContent align="end">
-                            <DropdownMenuItem onClick={() => handleViewAppointment(appointment)} data-testid={`menu-view-${appointment.id}`}>
+                            <DropdownMenuItem
+                              onClick={() => handleViewAppointment(appointment)}
+                              data-testid={`menu-view-${appointment.id}`}
+                            >
                               View
                             </DropdownMenuItem>
-                            <DropdownMenuItem 
-                              className="text-red-600" 
-                              onClick={() => handleDeleteAppointment(appointment.id)}
+                            <DropdownMenuItem
+                              className="text-red-600"
+                              onClick={() =>
+                                handleDeleteAppointment(appointment.id)
+                              }
                               data-testid={`menu-delete-${appointment.id}`}
                             >
                               Delete
@@ -416,12 +493,14 @@ export default function AppointmentHistory() {
             {/* Pagination */}
             <div className="flex items-center justify-between">
               <div className="text-sm text-gray-500">
-                Showing {startIndex + 1} to {Math.min(endIndex, filteredAppointments.length)} of {filteredAppointments.length} entries
+                Showing {startIndex + 1} to{" "}
+                {Math.min(endIndex, filteredAppointments.length)} of{" "}
+                {filteredAppointments.length} entries
               </div>
-              
+
               <div className="flex items-center gap-2">
-                <Button 
-                  variant="outline" 
+                <Button
+                  variant="outline"
                   size="sm"
                   onClick={() => setCurrentPage(Math.max(1, currentPage - 1))}
                   disabled={currentPage === 1}
@@ -429,7 +508,7 @@ export default function AppointmentHistory() {
                 >
                   Previous
                 </Button>
-                
+
                 {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
                   const pageNum = i + 1;
                   return (
@@ -438,18 +517,22 @@ export default function AppointmentHistory() {
                       variant={currentPage === pageNum ? "default" : "outline"}
                       size="sm"
                       onClick={() => setCurrentPage(pageNum)}
-                      className={currentPage === pageNum ? "bg-blue-600 text-white" : ""}
+                      className={
+                        currentPage === pageNum ? "bg-blue-600 text-white" : ""
+                      }
                       data-testid={`button-page-${pageNum}`}
                     >
                       {pageNum}
                     </Button>
                   );
                 })}
-                
-                <Button 
-                  variant="outline" 
+
+                <Button
+                  variant="outline"
                   size="sm"
-                  onClick={() => setCurrentPage(Math.min(totalPages, currentPage + 1))}
+                  onClick={() =>
+                    setCurrentPage(Math.min(totalPages, currentPage + 1))
+                  }
                   disabled={currentPage === totalPages}
                   data-testid="button-next-page"
                 >
@@ -463,82 +546,129 @@ export default function AppointmentHistory() {
 
       {/* Appointment Details Dialog */}
       <Dialog open={isViewDialogOpen} onOpenChange={setIsViewDialogOpen}>
-        <DialogContent className="max-w-2xl" data-testid="dialog-appointment-details">
+        <DialogContent
+          className="max-w-2xl"
+          data-testid="dialog-appointment-details"
+        >
           <DialogHeader>
-            <DialogTitle className="text-lg font-semibold">Appointment Details</DialogTitle>
+            <DialogTitle className="text-lg font-semibold">
+              Appointment Details
+            </DialogTitle>
           </DialogHeader>
-          
+
           {selectedAppointment && (
             <div className="space-y-3 text-sm">
               <div className="grid grid-cols-2 gap-x-8 gap-y-3">
                 <div>
                   <span className="font-semibold text-gray-700">Dealer :</span>
-                  <span className="ml-2 text-gray-900">{selectedAppointment.dealer}</span>
+                  <span className="ml-2 text-gray-900">
+                    {selectedAppointment.dealer}
+                  </span>
                 </div>
-                
+
                 <div>
                   <span className="font-semibold text-gray-700">Type :</span>
-                  <span className="ml-2 text-gray-900">{selectedAppointment.type}</span>
+                  <span className="ml-2 text-gray-900">
+                    {selectedAppointment.type}
+                  </span>
                 </div>
-                
+
                 <div>
-                  <span className="font-semibold text-gray-700">Customer :</span>
-                  <span className="ml-2 text-gray-900">{selectedAppointment.customerName}</span>
+                  <span className="font-semibold text-gray-700">
+                    Customer :
+                  </span>
+                  <span className="ml-2 text-gray-900">
+                    {selectedAppointment.customerName}
+                  </span>
                 </div>
-                
+
                 <div>
                   <span className="font-semibold text-gray-700">Phone # :</span>
-                  <span className="ml-2 text-gray-900">{selectedAppointment.customerPhone}</span>
+                  <span className="ml-2 text-gray-900">
+                    {selectedAppointment.customerPhone}
+                  </span>
                 </div>
-                
+
                 <div>
                   <span className="font-semibold text-gray-700">Date :</span>
-                  <span className="ml-2 text-gray-900">{selectedAppointment.appointmentDate}</span>
+                  <span className="ml-2 text-gray-900">
+                    {selectedAppointment.appointmentDate}
+                  </span>
                 </div>
-                
+
                 <div>
                   <span className="font-semibold text-gray-700">Time :</span>
-                  <span className="ml-2 text-gray-900">{selectedAppointment.appointmentTime}</span>
+                  <span className="ml-2 text-gray-900">
+                    {selectedAppointment.appointmentTime}
+                  </span>
                 </div>
-                
+
                 <div>
-                  <span className="font-semibold text-gray-700">Department :</span>
-                  <span className="ml-2 text-gray-900">{selectedAppointment.department}</span>
+                  <span className="font-semibold text-gray-700">
+                    Department :
+                  </span>
+                  <span className="ml-2 text-gray-900">
+                    {selectedAppointment.department}
+                  </span>
                 </div>
-                
+
                 <div>
-                  <span className="font-semibold text-gray-700">Scenario :</span>
-                  <span className="ml-2 text-gray-900">{selectedAppointment.scenario}</span>
+                  <span className="font-semibold text-gray-700">
+                    Scenario :
+                  </span>
+                  <span className="ml-2 text-gray-900">
+                    {selectedAppointment.scenario}
+                  </span>
                 </div>
-                
+
                 <div className="col-span-2">
-                  <span className="font-semibold text-gray-700">Vehicle Of Interest :</span>
-                  <span className="ml-2 text-gray-900">{selectedAppointment.vehicleOfInterest}</span>
+                  <span className="font-semibold text-gray-700">
+                    Vehicle Of Interest :
+                  </span>
+                  <span className="ml-2 text-gray-900">
+                    {selectedAppointment.vehicleOfInterest}
+                  </span>
                 </div>
-                
+
                 <div className="col-span-2">
                   <span className="font-semibold text-gray-700">Stock # :</span>
-                  <span className="ml-2 text-gray-900">{selectedAppointment.stockNumber || "N/A"}</span>
+                  <span className="ml-2 text-gray-900">
+                    {selectedAppointment.stockNumber || "N/A"}
+                  </span>
                 </div>
-                
+
                 <div>
-                  <span className="font-semibold text-gray-700">Payment Source :</span>
-                  <span className="ml-2 text-gray-900">{selectedAppointment.paymentSource}</span>
+                  <span className="font-semibold text-gray-700">
+                    Payment Source :
+                  </span>
+                  <span className="ml-2 text-gray-900">
+                    {selectedAppointment.paymentSource}
+                  </span>
                 </div>
-                
+
                 <div>
                   <span className="font-semibold text-gray-700">Comment :</span>
-                  <span className="ml-2 text-gray-900">{selectedAppointment.comment}</span>
+                  <span className="ml-2 text-gray-900">
+                    {selectedAppointment.comment}
+                  </span>
                 </div>
-                
+
                 <div>
-                  <span className="font-semibold text-gray-700">Lead Source :</span>
-                  <span className="ml-2 text-gray-900">{selectedAppointment.leadSource}</span>
+                  <span className="font-semibold text-gray-700">
+                    Lead Source :
+                  </span>
+                  <span className="ml-2 text-gray-900">
+                    {selectedAppointment.leadSource}
+                  </span>
                 </div>
-                
+
                 <div>
-                  <span className="font-semibold text-gray-700">Language :</span>
-                  <span className="ml-2 text-gray-900">{selectedAppointment.language}</span>
+                  <span className="font-semibold text-gray-700">
+                    Language :
+                  </span>
+                  <span className="ml-2 text-gray-900">
+                    {selectedAppointment.language}
+                  </span>
                 </div>
               </div>
             </div>

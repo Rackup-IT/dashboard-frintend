@@ -1,18 +1,28 @@
-import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Textarea } from "@/components/ui/textarea";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Textarea } from "@/components/ui/textarea";
+import { apiRequest } from "@/lib/queryClient";
+import { useEffect, useState } from "react";
+import { useLocation } from "wouter";
 
 export default function DealerNotification() {
+  const [, setLocation] = useLocation("");
   const [formType, setFormType] = useState("appointment");
   const [appointmentDate, setAppointmentDate] = useState("");
   const [appointmentTime, setAppointmentTime] = useState("");
-  
+
   const [formData, setFormData] = useState({
     dealership: "",
+    type: "",
     department: "",
     scenario: "",
     firstName: "",
@@ -20,6 +30,8 @@ export default function DealerNotification() {
     phoneNumber: "",
     phoneNumberType: "yes",
     email: "",
+    appointmentDate: "",
+    appointmentTime: "",
     vehicleInterest: "yes",
     year: "",
     make: "",
@@ -33,59 +45,121 @@ export default function DealerNotification() {
     paymentPreference: "",
     comment: "",
     leadSource: "",
-    language: "english"
+    language: "english",
   });
+  const [dealerships, setDealerships] = useState<
+    { _id: string; dealerName: string }[]
+  >([]);
+  const [departments, setDepartments] = useState<
+    {
+      _id: string;
+      name: string;
+    }[]
+  >([]);
+  const [scenarios, setScenarios] = useState<
+    {
+      _id: string;
+      name: string;
+    }[]
+  >([]);
+  const [leadSources, setLeadSources] = useState<
+    {
+      _id: string;
+      name: string;
+    }[]
+  >([]);
 
-  const dealerships = [
-    "All American Chevrolet of Midland",
-    "Andrews Auto",
-    "Augusta Mitsubishi",
-    "Daytona Kia",
-    "Daytona Mitsubishi"
-  ];
+  useEffect(() => {
+    loadData();
+  }, []);
+  const loadData = () => {
+    apiRequest("GET", "dealer/get-all").then((data) => {
+      const dealers = data.dealers.map((dealer: any) => ({
+        _id: dealer._id,
+        dealerName: dealer.dealerName,
+      }));
 
-  const departments = [
-    "Sales",
-    "Service",
-    "Parts",
-    "Finance"
-  ];
+      setDealerships(dealers);
+    });
+    apiRequest("GET", "department/get-all").then((data) => {
+      setDepartments(
+        data.departments.map((dept: any) => ({
+          _id: dept._id,
+          name: dept.name,
+        }))
+      );
+    });
+    apiRequest("GET", "department/scenario/get-all").then((data) => {
+      console.log(data);
+      setScenarios(
+        data.scenarios.map((scenario: any) => ({
+          _id: scenario._id,
+          name: scenario.name,
+        }))
+      );
+    });
+    apiRequest("GET", "lead/get-all").then((data) => {
+      setLeadSources(
+        data.leadSources.map((source: any) => ({
+          _id: source._id,
+          name: source.name,
+        }))
+      );
+    });
+  };
 
-  const scenarios = [
-    "New Vehicle Inquiry",
-    "Used Vehicle Inquiry",
-    "Service Appointment",
-    "Parts Inquiry",
-    "Finance Application"
-  ];
+  const years = Array.from({ length: 30 }, (_, i) =>
+    (new Date().getFullYear() - i).toString()
+  );
 
-  const years = Array.from({ length: 30 }, (_, i) => (new Date().getFullYear() - i).toString());
-  
   const makes = [
-    "Chevrolet", "Ford", "Toyota", "Honda", "Nissan", "BMW", "Mercedes-Benz", 
-    "Audi", "Volkswagen", "Hyundai", "Kia", "Mazda", "Subaru", "Mitsubishi"
+    "Chevrolet",
+    "Ford",
+    "Toyota",
+    "Honda",
+    "Nissan",
+    "BMW",
+    "Mercedes-Benz",
+    "Audi",
+    "Volkswagen",
+    "Hyundai",
+    "Kia",
+    "Mazda",
+    "Subaru",
+    "Mitsubishi",
   ];
 
   const models = [
-    "Sedan", "SUV", "Truck", "Coupe", "Hatchback", "Convertible", "Wagon"
+    "Sedan",
+    "SUV",
+    "Truck",
+    "Coupe",
+    "Hatchback",
+    "Convertible",
+    "Wagon",
   ];
 
-  const paymentPreferences = [
-    "Cash", "Finance", "Lease", "Trade-In"
-  ];
-
-  const leadSources = [
-    "Website", "Phone Call", "Walk-In", "Referral", "Social Media", "Advertisement"
-  ];
+  const paymentPreferences = ["Cash", "Finance", "Lease", "Trade-In"];
 
   const handleSubmit = () => {
-    console.log("Form submitted:", formData);
+    if (formType === "appointment") {
+      formData.type = "appointment";
+    } else {
+      formData.type = "follow-up";
+    }
+    formData.appointmentDate = appointmentDate;
+    formData.appointmentTime = appointmentTime;
+    apiRequest("POST", "appointment/create", formData).then((response) => {
+      setLocation("/admin/appointment-history");
+    });
   };
 
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-semibold text-gray-900">Appointment / Follow Up</h1>
+        <h1 className="text-2xl font-semibold text-gray-900">
+          Appointment / Follow Up
+        </h1>
         <p className="text-sm text-gray-500">Dashboard / Create Appointment</p>
       </div>
 
@@ -93,17 +167,25 @@ export default function DealerNotification() {
         <div className="space-y-6">
           {/* Radio Selection for Appointment/Follow Up */}
           <div>
-            <RadioGroup 
-              value={formType} 
+            <RadioGroup
+              value={formType}
               onValueChange={setFormType}
               className="flex gap-6"
             >
               <div className="flex items-center space-x-2">
-                <RadioGroupItem value="appointment" id="type-appointment" data-testid="radio-appointment" />
+                <RadioGroupItem
+                  value="appointment"
+                  id="type-appointment"
+                  data-testid="radio-appointment"
+                />
                 <Label htmlFor="type-appointment">Appointment</Label>
               </div>
               <div className="flex items-center space-x-2">
-                <RadioGroupItem value="follow-up" id="type-followup" data-testid="radio-followup" />
+                <RadioGroupItem
+                  value="follow-up"
+                  id="type-followup"
+                  data-testid="radio-followup"
+                />
                 <Label htmlFor="type-followup">Follow Up</Label>
               </div>
             </RadioGroup>
@@ -112,16 +194,20 @@ export default function DealerNotification() {
           {/* Dealership */}
           <div className="space-y-2">
             <Label>Dealership</Label>
-            <Select 
-              value={formData.dealership} 
-              onValueChange={(value) => setFormData(prev => ({...prev, dealership: value}))}
+            <Select
+              value={formData.dealership}
+              onValueChange={(value) =>
+                setFormData((prev) => ({ ...prev, dealership: value }))
+              }
             >
               <SelectTrigger className="w-full" data-testid="select-dealership">
                 <SelectValue placeholder="Select" />
               </SelectTrigger>
               <SelectContent>
                 {dealerships.map((dealer) => (
-                  <SelectItem key={dealer} value={dealer}>{dealer}</SelectItem>
+                  <SelectItem key={dealer._id} value={dealer._id}>
+                    {dealer.dealerName}
+                  </SelectItem>
                 ))}
               </SelectContent>
             </Select>
@@ -131,16 +217,23 @@ export default function DealerNotification() {
           {formType === "appointment" && (
             <div className="space-y-2">
               <Label>Department</Label>
-              <Select 
-                value={formData.department} 
-                onValueChange={(value) => setFormData(prev => ({...prev, department: value}))}
+              <Select
+                value={formData.department}
+                onValueChange={(value) =>
+                  setFormData((prev) => ({ ...prev, department: value }))
+                }
               >
-                <SelectTrigger className="w-full" data-testid="select-department">
+                <SelectTrigger
+                  className="w-full"
+                  data-testid="select-department"
+                >
                   <SelectValue placeholder="Select" />
                 </SelectTrigger>
                 <SelectContent>
                   {departments.map((dept) => (
-                    <SelectItem key={dept} value={dept}>{dept}</SelectItem>
+                    <SelectItem key={dept._id} value={dept._id}>
+                      {dept.name}
+                    </SelectItem>
                   ))}
                 </SelectContent>
               </Select>
@@ -150,16 +243,20 @@ export default function DealerNotification() {
           {/* Scenario */}
           <div className="space-y-2">
             <Label>Scenario</Label>
-            <Select 
-              value={formData.scenario} 
-              onValueChange={(value) => setFormData(prev => ({...prev, scenario: value}))}
+            <Select
+              value={formData.scenario}
+              onValueChange={(value) =>
+                setFormData((prev) => ({ ...prev, scenario: value }))
+              }
             >
               <SelectTrigger className="w-full" data-testid="select-scenario">
                 <SelectValue placeholder="Select" />
               </SelectTrigger>
               <SelectContent>
                 {scenarios.map((scenario) => (
-                  <SelectItem key={scenario} value={scenario}>{scenario}</SelectItem>
+                  <SelectItem key={scenario._id} value={scenario._id}>
+                    {scenario.name}
+                  </SelectItem>
                 ))}
               </SelectContent>
             </Select>
@@ -199,7 +296,12 @@ export default function DealerNotification() {
               <Input
                 id="first-name"
                 value={formData.firstName}
-                onChange={(e) => setFormData(prev => ({...prev, firstName: e.target.value}))}
+                onChange={(e) =>
+                  setFormData((prev) => ({
+                    ...prev,
+                    firstName: e.target.value,
+                  }))
+                }
                 placeholder=""
                 data-testid="input-first-name"
               />
@@ -210,7 +312,9 @@ export default function DealerNotification() {
               <Input
                 id="last-name"
                 value={formData.lastName}
-                onChange={(e) => setFormData(prev => ({...prev, lastName: e.target.value}))}
+                onChange={(e) =>
+                  setFormData((prev) => ({ ...prev, lastName: e.target.value }))
+                }
                 placeholder=""
                 data-testid="input-last-name"
               />
@@ -223,21 +327,36 @@ export default function DealerNotification() {
               <Label>Phone Number</Label>
               <Input
                 value={formData.phoneNumber}
-                onChange={(e) => setFormData(prev => ({...prev, phoneNumber: e.target.value}))}
+                onChange={(e) =>
+                  setFormData((prev) => ({
+                    ...prev,
+                    phoneNumber: e.target.value,
+                  }))
+                }
                 placeholder=""
                 data-testid="input-phone-number"
               />
-              <RadioGroup 
-                value={formData.phoneNumberType} 
-                onValueChange={(value) => setFormData(prev => ({...prev, phoneNumberType: value}))}
+              <RadioGroup
+                value={formData.phoneNumberType}
+                onValueChange={(value) =>
+                  setFormData((prev) => ({ ...prev, phoneNumberType: value }))
+                }
                 className="flex gap-4"
               >
                 <div className="flex items-center space-x-2">
-                  <RadioGroupItem value="yes" id="phone-yes" data-testid="radio-phone-yes" />
+                  <RadioGroupItem
+                    value="yes"
+                    id="phone-yes"
+                    data-testid="radio-phone-yes"
+                  />
                   <Label htmlFor="phone-yes">Yes</Label>
                 </div>
                 <div className="flex items-center space-x-2">
-                  <RadioGroupItem value="no" id="phone-no" data-testid="radio-phone-no" />
+                  <RadioGroupItem
+                    value="no"
+                    id="phone-no"
+                    data-testid="radio-phone-no"
+                  />
                   <Label htmlFor="phone-no">No</Label>
                 </div>
               </RadioGroup>
@@ -249,7 +368,9 @@ export default function DealerNotification() {
                 id="email"
                 type="email"
                 value={formData.email}
-                onChange={(e) => setFormData(prev => ({...prev, email: e.target.value}))}
+                onChange={(e) =>
+                  setFormData((prev) => ({ ...prev, email: e.target.value }))
+                }
                 placeholder=""
                 data-testid="input-email"
               />
@@ -259,17 +380,27 @@ export default function DealerNotification() {
           {/* Vehicle of Interest */}
           <div className="space-y-2">
             <Label>Vehicle of Interest</Label>
-            <RadioGroup 
-              value={formData.vehicleInterest} 
-              onValueChange={(value) => setFormData(prev => ({...prev, vehicleInterest: value}))}
+            <RadioGroup
+              value={formData.vehicleInterest}
+              onValueChange={(value) =>
+                setFormData((prev) => ({ ...prev, vehicleInterest: value }))
+              }
               className="flex gap-4"
             >
               <div className="flex items-center space-x-2">
-                <RadioGroupItem value="yes" id="vehicle-yes" data-testid="radio-vehicle-yes" />
+                <RadioGroupItem
+                  value="yes"
+                  id="vehicle-yes"
+                  data-testid="radio-vehicle-yes"
+                />
                 <Label htmlFor="vehicle-yes">Yes</Label>
               </div>
               <div className="flex items-center space-x-2">
-                <RadioGroupItem value="no" id="vehicle-no" data-testid="radio-vehicle-no" />
+                <RadioGroupItem
+                  value="no"
+                  id="vehicle-no"
+                  data-testid="radio-vehicle-no"
+                />
                 <Label htmlFor="vehicle-no">No</Label>
               </div>
             </RadioGroup>
@@ -279,13 +410,20 @@ export default function DealerNotification() {
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div className="space-y-2">
               <Label>Year</Label>
-              <Select value={formData.year} onValueChange={(value) => setFormData(prev => ({...prev, year: value}))}>
+              <Select
+                value={formData.year}
+                onValueChange={(value) =>
+                  setFormData((prev) => ({ ...prev, year: value }))
+                }
+              >
                 <SelectTrigger data-testid="select-year">
                   <SelectValue placeholder="Select" />
                 </SelectTrigger>
                 <SelectContent>
                   {years.map((year) => (
-                    <SelectItem key={year} value={year}>{year}</SelectItem>
+                    <SelectItem key={year} value={year}>
+                      {year}
+                    </SelectItem>
                   ))}
                 </SelectContent>
               </Select>
@@ -293,13 +431,20 @@ export default function DealerNotification() {
 
             <div className="space-y-2">
               <Label>Make</Label>
-              <Select value={formData.make} onValueChange={(value) => setFormData(prev => ({...prev, make: value}))}>
+              <Select
+                value={formData.make}
+                onValueChange={(value) =>
+                  setFormData((prev) => ({ ...prev, make: value }))
+                }
+              >
                 <SelectTrigger data-testid="select-make">
                   <SelectValue placeholder="Select" />
                 </SelectTrigger>
                 <SelectContent>
                   {makes.map((make) => (
-                    <SelectItem key={make} value={make}>{make}</SelectItem>
+                    <SelectItem key={make} value={make}>
+                      {make}
+                    </SelectItem>
                   ))}
                 </SelectContent>
               </Select>
@@ -307,13 +452,20 @@ export default function DealerNotification() {
 
             <div className="space-y-2">
               <Label>Model</Label>
-              <Select value={formData.model} onValueChange={(value) => setFormData(prev => ({...prev, model: value}))}>
+              <Select
+                value={formData.model}
+                onValueChange={(value) =>
+                  setFormData((prev) => ({ ...prev, model: value }))
+                }
+              >
                 <SelectTrigger data-testid="select-model">
                   <SelectValue placeholder="Select" />
                 </SelectTrigger>
                 <SelectContent>
                   {models.map((model) => (
-                    <SelectItem key={model} value={model}>{model}</SelectItem>
+                    <SelectItem key={model} value={model}>
+                      {model}
+                    </SelectItem>
                   ))}
                 </SelectContent>
               </Select>
@@ -326,7 +478,12 @@ export default function DealerNotification() {
             <Input
               id="stock-number"
               value={formData.stockNumber}
-              onChange={(e) => setFormData(prev => ({...prev, stockNumber: e.target.value}))}
+              onChange={(e) =>
+                setFormData((prev) => ({
+                  ...prev,
+                  stockNumber: e.target.value,
+                }))
+              }
               placeholder=""
               data-testid="input-stock-number"
             />
@@ -335,17 +492,27 @@ export default function DealerNotification() {
           {/* Trade-in */}
           <div className="space-y-2">
             <Label>Trade-in</Label>
-            <RadioGroup 
-              value={formData.tradeIn} 
-              onValueChange={(value) => setFormData(prev => ({...prev, tradeIn: value}))}
+            <RadioGroup
+              value={formData.tradeIn}
+              onValueChange={(value) =>
+                setFormData((prev) => ({ ...prev, tradeIn: value }))
+              }
               className="flex gap-4"
             >
               <div className="flex items-center space-x-2">
-                <RadioGroupItem value="yes" id="trade-yes" data-testid="radio-trade-yes" />
+                <RadioGroupItem
+                  value="yes"
+                  id="trade-yes"
+                  data-testid="radio-trade-yes"
+                />
                 <Label htmlFor="trade-yes">Yes</Label>
               </div>
               <div className="flex items-center space-x-2">
-                <RadioGroupItem value="no" id="trade-no" data-testid="radio-trade-no" />
+                <RadioGroupItem
+                  value="no"
+                  id="trade-no"
+                  data-testid="radio-trade-no"
+                />
                 <Label htmlFor="trade-no">No</Label>
               </div>
             </RadioGroup>
@@ -355,13 +522,20 @@ export default function DealerNotification() {
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div className="space-y-2">
               <Label>Year</Label>
-              <Select value={formData.tradeYear} onValueChange={(value) => setFormData(prev => ({...prev, tradeYear: value}))}>
+              <Select
+                value={formData.tradeYear}
+                onValueChange={(value) =>
+                  setFormData((prev) => ({ ...prev, tradeYear: value }))
+                }
+              >
                 <SelectTrigger data-testid="select-trade-year">
                   <SelectValue placeholder="Select" />
                 </SelectTrigger>
                 <SelectContent>
                   {years.map((year) => (
-                    <SelectItem key={year} value={year}>{year}</SelectItem>
+                    <SelectItem key={year} value={year}>
+                      {year}
+                    </SelectItem>
                   ))}
                 </SelectContent>
               </Select>
@@ -369,13 +543,20 @@ export default function DealerNotification() {
 
             <div className="space-y-2">
               <Label>Make</Label>
-              <Select value={formData.tradeMake} onValueChange={(value) => setFormData(prev => ({...prev, tradeMake: value}))}>
+              <Select
+                value={formData.tradeMake}
+                onValueChange={(value) =>
+                  setFormData((prev) => ({ ...prev, tradeMake: value }))
+                }
+              >
                 <SelectTrigger data-testid="select-trade-make">
                   <SelectValue placeholder="Select" />
                 </SelectTrigger>
                 <SelectContent>
                   {makes.map((make) => (
-                    <SelectItem key={make} value={make}>{make}</SelectItem>
+                    <SelectItem key={make} value={make}>
+                      {make}
+                    </SelectItem>
                   ))}
                 </SelectContent>
               </Select>
@@ -383,13 +564,20 @@ export default function DealerNotification() {
 
             <div className="space-y-2">
               <Label>Model</Label>
-              <Select value={formData.tradeModel} onValueChange={(value) => setFormData(prev => ({...prev, tradeModel: value}))}>
+              <Select
+                value={formData.tradeModel}
+                onValueChange={(value) =>
+                  setFormData((prev) => ({ ...prev, tradeModel: value }))
+                }
+              >
                 <SelectTrigger data-testid="select-trade-model">
                   <SelectValue placeholder="Select" />
                 </SelectTrigger>
                 <SelectContent>
                   {models.map((model) => (
-                    <SelectItem key={model} value={model}>{model}</SelectItem>
+                    <SelectItem key={model} value={model}>
+                      {model}
+                    </SelectItem>
                   ))}
                 </SelectContent>
               </Select>
@@ -403,7 +591,9 @@ export default function DealerNotification() {
               id="miles"
               type="number"
               value={formData.miles}
-              onChange={(e) => setFormData(prev => ({...prev, miles: e.target.value}))}
+              onChange={(e) =>
+                setFormData((prev) => ({ ...prev, miles: e.target.value }))
+              }
               placeholder=""
               data-testid="input-miles"
             />
@@ -412,13 +602,20 @@ export default function DealerNotification() {
           {/* Payment Preference */}
           <div className="space-y-2">
             <Label>Payment Preference</Label>
-            <Select value={formData.paymentPreference} onValueChange={(value) => setFormData(prev => ({...prev, paymentPreference: value}))}>
+            <Select
+              value={formData.paymentPreference}
+              onValueChange={(value) =>
+                setFormData((prev) => ({ ...prev, paymentPreference: value }))
+              }
+            >
               <SelectTrigger data-testid="select-payment-preference">
                 <SelectValue placeholder="Select" />
               </SelectTrigger>
               <SelectContent>
                 {paymentPreferences.map((pref) => (
-                  <SelectItem key={pref} value={pref}>{pref}</SelectItem>
+                  <SelectItem key={pref} value={pref}>
+                    {pref}
+                  </SelectItem>
                 ))}
               </SelectContent>
             </Select>
@@ -430,7 +627,9 @@ export default function DealerNotification() {
             <Textarea
               id="comment"
               value={formData.comment}
-              onChange={(e) => setFormData(prev => ({...prev, comment: e.target.value}))}
+              onChange={(e) =>
+                setFormData((prev) => ({ ...prev, comment: e.target.value }))
+              }
               placeholder=""
               rows={4}
               data-testid="textarea-comment"
@@ -440,13 +639,20 @@ export default function DealerNotification() {
           {/* Lead Source */}
           <div className="space-y-2">
             <Label>Lead Source</Label>
-            <Select value={formData.leadSource} onValueChange={(value) => setFormData(prev => ({...prev, leadSource: value}))}>
+            <Select
+              value={formData.leadSource}
+              onValueChange={(value) =>
+                setFormData((prev) => ({ ...prev, leadSource: value }))
+              }
+            >
               <SelectTrigger data-testid="select-lead-source">
                 <SelectValue placeholder="Select" />
               </SelectTrigger>
               <SelectContent>
                 {leadSources.map((source) => (
-                  <SelectItem key={source} value={source}>{source}</SelectItem>
+                  <SelectItem key={source._id} value={source._id}>
+                    {source.name}
+                  </SelectItem>
                 ))}
               </SelectContent>
             </Select>
@@ -455,17 +661,27 @@ export default function DealerNotification() {
           {/* Language */}
           <div className="space-y-2">
             <Label>Language</Label>
-            <RadioGroup 
-              value={formData.language} 
-              onValueChange={(value) => setFormData(prev => ({...prev, language: value}))}
+            <RadioGroup
+              value={formData.language}
+              onValueChange={(value) =>
+                setFormData((prev) => ({ ...prev, language: value }))
+              }
               className="flex gap-4"
             >
               <div className="flex items-center space-x-2">
-                <RadioGroupItem value="english" id="lang-english" data-testid="radio-lang-english" />
+                <RadioGroupItem
+                  value="english"
+                  id="lang-english"
+                  data-testid="radio-lang-english"
+                />
                 <Label htmlFor="lang-english">English</Label>
               </div>
               <div className="flex items-center space-x-2">
-                <RadioGroupItem value="spanish" id="lang-spanish" data-testid="radio-lang-spanish" />
+                <RadioGroupItem
+                  value="spanish"
+                  id="lang-spanish"
+                  data-testid="radio-lang-spanish"
+                />
                 <Label htmlFor="lang-spanish">Spanish</Label>
               </div>
             </RadioGroup>
@@ -473,8 +689,8 @@ export default function DealerNotification() {
 
           {/* Submit Button */}
           <div className="flex justify-center pt-4">
-            <Button 
-              onClick={handleSubmit} 
+            <Button
+              onClick={handleSubmit}
               className="bg-blue-600 hover:bg-blue-700 text-white px-8"
               data-testid="button-submit"
             >
