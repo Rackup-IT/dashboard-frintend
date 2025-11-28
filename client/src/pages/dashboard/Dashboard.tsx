@@ -1,21 +1,38 @@
-import { useState } from "react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { Calendar } from "@/components/ui/calendar";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Calendar as CalendarIcon } from "lucide-react";
+import { Card, CardContent } from "@/components/ui/card";
+import { apiRequest } from "@/lib/queryClient";
 import { format } from "date-fns";
+import { useEffect, useState } from "react";
 
 export default function Dashboard() {
+  const icons = {
+    "users-icons": "👥",
+    "appointments-icons": "📅",
+    "dealers-icons": "🏢",
+    "today-appointments-icons": "📆",
+    "monthly-appointments-icons": "🗓️",
+  };
   // Date states for each table
-  const [todayAgentDate, setTodayAgentDate] = useState<Date | undefined>(new Date());
-  const [todayDealerDate, setTodayDealerDate] = useState<Date | undefined>(new Date());
-  const [todayAgentDeptDate, setTodayAgentDeptDate] = useState<Date | undefined>(new Date());
-  const [todayDealerDeptDate, setTodayDealerDeptDate] = useState<Date | undefined>(new Date());
-  const [mtdAgentDate, setMtdAgentDate] = useState<Date | undefined>(new Date());
-  const [mtdDealerDate, setMtdDealerDate] = useState<Date | undefined>(new Date());
-  const [ringCentralDate, setRingCentralDate] = useState<Date | undefined>(new Date());
+  const [todayAgentDate, setTodayAgentDate] = useState<Date | undefined>(
+    new Date()
+  );
+  const [todayDealerDate, setTodayDealerDate] = useState<Date | undefined>(
+    new Date()
+  );
+  const [todayAgentDeptDate, setTodayAgentDeptDate] = useState<
+    Date | undefined
+  >(new Date());
+  const [todayDealerDeptDate, setTodayDealerDeptDate] = useState<
+    Date | undefined
+  >(new Date());
+  const [mtdAgentDate, setMtdAgentDate] = useState<Date | undefined>(
+    new Date()
+  );
+  const [mtdDealerDate, setMtdDealerDate] = useState<Date | undefined>(
+    new Date()
+  );
+  const [ringCentralDate, setRingCentralDate] = useState<Date | undefined>(
+    new Date()
+  );
 
   // Calendar open states
   const [calendarStates, setCalendarStates] = useState({
@@ -29,79 +46,345 @@ export default function Dashboard() {
   });
 
   const setCalendarOpen = (table: string, isOpen: boolean) => {
-    setCalendarStates(prev => ({ ...prev, [table]: isOpen }));
+    setCalendarStates((prev) => ({ ...prev, [table]: isOpen }));
   };
 
   // Sample data matching the screenshots
-  const summaryStats = [
-    { title: "Total Employees", value: "76", icon: "👥", color: "bg-yellow-100" },
-    { title: "Total Dealers", value: "51", icon: "🏢", color: "bg-blue-100" },
-    { title: "Today Appointments", value: "174", icon: "📅", color: "bg-green-100" },
-    { title: "Month Appointments", value: "6,998", icon: "📊", color: "bg-purple-100" },
-    { title: "Appt. for Today", value: "62", icon: "⏰", color: "bg-yellow-100" },
-    { title: "Appt. for Tomorrow", value: "105", icon: "📅", color: "bg-blue-100" },
-    { title: "Appt. for 3rd day", value: "8", icon: "📆", color: "bg-green-100" },
-    { title: "Appt. for 4th day", value: "10", icon: "📋", color: "bg-purple-100" },
-  ];
+  const [summaryStats, setSummaryStats] = useState([]);
 
   const todayAgentStats = [
     { agent: "vdmengpe", apts_today: 0, last_apt: "-", hourly_avg_apts: 0 },
-    { agent: "Adrian Mclaughlin", apts_today: 34, last_apt: "17 minutes ago", hourly_avg_apts: 1.65 },
-    { agent: "Alex Willhite", apts_today: 0, last_apt: "17 minutes ago", hourly_avg_apts: 1.9 },
-    { agent: "Amanda Jones", apts_today: 34, last_apt: "6 minutes ago", hourly_avg_apts: 1.6 },
-    { agent: "Jonathan Gonzalez", apts_today: 1, last_apt: "2 hours ago", hourly_avg_apts: 0.55 },
+    {
+      agent: "Adrian Mclaughlin",
+      apts_today: 34,
+      last_apt: "17 minutes ago",
+      hourly_avg_apts: 1.65,
+    },
+    {
+      agent: "Alex Willhite",
+      apts_today: 0,
+      last_apt: "17 minutes ago",
+      hourly_avg_apts: 1.9,
+    },
+    {
+      agent: "Amanda Jones",
+      apts_today: 34,
+      last_apt: "6 minutes ago",
+      hourly_avg_apts: 1.6,
+    },
+    {
+      agent: "Jonathan Gonzalez",
+      apts_today: 1,
+      last_apt: "2 hours ago",
+      hourly_avg_apts: 0.55,
+    },
   ];
 
   const todayDealerStats = [
-    { dealer: "All American Chevrolet of Midland", apts_today: 2, last_apt: "4 hours ago", hourly_avg_apts: 0.55 },
-    { dealer: "Anchor Kia", apts_today: 7, last_apt: "20 minutes ago", hourly_avg_apts: 2.84 },
-    { dealer: "Augusta Mitsubishi", apts_today: 25, last_apt: "-", hourly_avg_apts: 1.52 },
-    { dealer: "Goyanda Kia", apts_today: 6, last_apt: "25 minutes ago", hourly_avg_apts: 3.33 },
-    { dealer: "Daytona Mitsubishi", apts_today: 15, last_apt: "6 minutes ago", hourly_avg_apts: 1.75 },
+    {
+      dealer: "All American Chevrolet of Midland",
+      apts_today: 2,
+      last_apt: "4 hours ago",
+      hourly_avg_apts: 0.55,
+    },
+    {
+      dealer: "Anchor Kia",
+      apts_today: 7,
+      last_apt: "20 minutes ago",
+      hourly_avg_apts: 2.84,
+    },
+    {
+      dealer: "Augusta Mitsubishi",
+      apts_today: 25,
+      last_apt: "-",
+      hourly_avg_apts: 1.52,
+    },
+    {
+      dealer: "Goyanda Kia",
+      apts_today: 6,
+      last_apt: "25 minutes ago",
+      hourly_avg_apts: 3.33,
+    },
+    {
+      dealer: "Daytona Mitsubishi",
+      apts_today: 15,
+      last_apt: "6 minutes ago",
+      hourly_avg_apts: 1.75,
+    },
   ];
 
   const todayAgentDeptStats = [
-    { agent: "vdmengpe", apts: 0, campaigns: 0, confirmations: 0, data_mining: 0, follow_up: 0, sms: 0, sales: 0 },
-    { agent: "Adrian Mclaughlin", apts: 34, campaigns: 0, confirmations: 0, data_mining: 0, follow_up: 0, sms: 0, sales: 0 },
-    { agent: "Alex Willhite", apts: 0, campaigns: 0, confirmations: 0, data_mining: 0, follow_up: 0, sms: 0, sales: 0 },
-    { agent: "Amanda Jones", apts: 34, campaigns: 6, confirmations: 0, data_mining: 0, follow_up: 6, sms: 0, sales: 34 },
-    { agent: "Jonathan", apts: 1, campaigns: 1, confirmations: 1, data_mining: 0, follow_up: 1, sms: 0, sales: 1 },
+    {
+      agent: "vdmengpe",
+      apts: 0,
+      campaigns: 0,
+      confirmations: 0,
+      data_mining: 0,
+      follow_up: 0,
+      sms: 0,
+      sales: 0,
+    },
+    {
+      agent: "Adrian Mclaughlin",
+      apts: 34,
+      campaigns: 0,
+      confirmations: 0,
+      data_mining: 0,
+      follow_up: 0,
+      sms: 0,
+      sales: 0,
+    },
+    {
+      agent: "Alex Willhite",
+      apts: 0,
+      campaigns: 0,
+      confirmations: 0,
+      data_mining: 0,
+      follow_up: 0,
+      sms: 0,
+      sales: 0,
+    },
+    {
+      agent: "Amanda Jones",
+      apts: 34,
+      campaigns: 6,
+      confirmations: 0,
+      data_mining: 0,
+      follow_up: 6,
+      sms: 0,
+      sales: 34,
+    },
+    {
+      agent: "Jonathan",
+      apts: 1,
+      campaigns: 1,
+      confirmations: 1,
+      data_mining: 0,
+      follow_up: 1,
+      sms: 0,
+      sales: 1,
+    },
   ];
 
   const todayDealerDeptStats = [
-    { dealer: "All American Chevrolet of Midland", apts: 2, campaigns: 0, confirmations: 0, data_mining: 0, follow_up: 0, sms: 0, sales: 2 },
-    { dealer: "Anchor Kia", apts: 0, campaigns: 0, confirmations: 0, data_mining: 0, follow_up: 0, sms: 0, sales: 7 },
-    { dealer: "Augusta", apts: 25, campaigns: 0, confirmations: 0, data_mining: 0, follow_up: 1, sms: 0, sales: 25 },
-    { dealer: "Goyanda", apts: 6, campaigns: 5, confirmations: 3, data_mining: 0, follow_up: 1, sms: 0, sales: 6 },
-    { dealer: "Jonathan", apts: 15, campaigns: 1, confirmations: 1, data_mining: 0, follow_up: 1, sms: 0, sales: 15 },
+    {
+      dealer: "All American Chevrolet of Midland",
+      apts: 2,
+      campaigns: 0,
+      confirmations: 0,
+      data_mining: 0,
+      follow_up: 0,
+      sms: 0,
+      sales: 2,
+    },
+    {
+      dealer: "Anchor Kia",
+      apts: 0,
+      campaigns: 0,
+      confirmations: 0,
+      data_mining: 0,
+      follow_up: 0,
+      sms: 0,
+      sales: 7,
+    },
+    {
+      dealer: "Augusta",
+      apts: 25,
+      campaigns: 0,
+      confirmations: 0,
+      data_mining: 0,
+      follow_up: 1,
+      sms: 0,
+      sales: 25,
+    },
+    {
+      dealer: "Goyanda",
+      apts: 6,
+      campaigns: 5,
+      confirmations: 3,
+      data_mining: 0,
+      follow_up: 1,
+      sms: 0,
+      sales: 6,
+    },
+    {
+      dealer: "Jonathan",
+      apts: 15,
+      campaigns: 1,
+      confirmations: 1,
+      data_mining: 0,
+      follow_up: 1,
+      sms: 0,
+      sales: 15,
+    },
   ];
 
   const mtdAgentStats = [
-    { agent: "vdmengpe", total_apts: "0", mid_avg: "0", campaigns: "0", confirmations: "0", data_mining: "0", follow_up: "0", sms: "0", sales: "0" },
-    { agent: "Adrian Mclaughlin", total_apts: "1,895", mid_avg: "134.24", campaigns: "0", confirmations: "0", data_mining: "0", follow_up: "0", sms: "0", sales: "1,895" },
-    { agent: "Alex Willhite", total_apts: "585", mid_avg: "21.81", campaigns: "0", confirmations: "0", data_mining: "0", follow_up: "0", sms: "0", sales: "168" },
-    { agent: "Amanda Jones", total_apts: "655", mid_avg: "140.76", campaigns: "2", confirmations: "1", data_mining: "0", follow_up: "23", sms: "6", sales: "672" },
-    { agent: "Jonathan Gonzalez", total_apts: "398", mid_avg: "47.36", campaigns: "1", confirmations: "0", data_mining: "0", follow_up: "128", sms: "6", sales: "398" },
+    {
+      agent: "vdmengpe",
+      total_apts: "0",
+      mid_avg: "0",
+      campaigns: "0",
+      confirmations: "0",
+      data_mining: "0",
+      follow_up: "0",
+      sms: "0",
+      sales: "0",
+    },
+    {
+      agent: "Adrian Mclaughlin",
+      total_apts: "1,895",
+      mid_avg: "134.24",
+      campaigns: "0",
+      confirmations: "0",
+      data_mining: "0",
+      follow_up: "0",
+      sms: "0",
+      sales: "1,895",
+    },
+    {
+      agent: "Alex Willhite",
+      total_apts: "585",
+      mid_avg: "21.81",
+      campaigns: "0",
+      confirmations: "0",
+      data_mining: "0",
+      follow_up: "0",
+      sms: "0",
+      sales: "168",
+    },
+    {
+      agent: "Amanda Jones",
+      total_apts: "655",
+      mid_avg: "140.76",
+      campaigns: "2",
+      confirmations: "1",
+      data_mining: "0",
+      follow_up: "23",
+      sms: "6",
+      sales: "672",
+    },
+    {
+      agent: "Jonathan Gonzalez",
+      total_apts: "398",
+      mid_avg: "47.36",
+      campaigns: "1",
+      confirmations: "0",
+      data_mining: "0",
+      follow_up: "128",
+      sms: "6",
+      sales: "398",
+    },
   ];
 
   const mtdDealerStats = [
-    { dealer: "All American Chevrolet of Midland", total_apts: "79", daily_avg: "2.7", campaigns: "0", confirmations: "0", data_mining: "0", follow_up: "1", sms: "2", sales: "79" },
-    { dealer: "Anchor Kia", total_apts: "114", daily_avg: "8", campaigns: "0", confirmations: "0", data_mining: "0", follow_up: "3", sms: "0", sales: "114" },
-    { dealer: "Augusta Mitsubishi", total_apts: "274", daily_avg: "12.8", campaigns: "0", confirmations: "0", data_mining: "0", follow_up: "3", sms: "0", sales: "274" },
-    { dealer: "Goyanda Kia", total_apts: "307", daily_avg: "9.17", campaigns: "5", confirmations: "0", data_mining: "0", follow_up: "6", sms: "0", sales: "307" },
-    { dealer: "Daytona Mitsubishi", total_apts: "194", daily_avg: "8.83", campaigns: "0", confirmations: "0", data_mining: "0", follow_up: "3", sms: "0", sales: "194" },
+    {
+      dealer: "All American Chevrolet of Midland",
+      total_apts: "79",
+      daily_avg: "2.7",
+      campaigns: "0",
+      confirmations: "0",
+      data_mining: "0",
+      follow_up: "1",
+      sms: "2",
+      sales: "79",
+    },
+    {
+      dealer: "Anchor Kia",
+      total_apts: "114",
+      daily_avg: "8",
+      campaigns: "0",
+      confirmations: "0",
+      data_mining: "0",
+      follow_up: "3",
+      sms: "0",
+      sales: "114",
+    },
+    {
+      dealer: "Augusta Mitsubishi",
+      total_apts: "274",
+      daily_avg: "12.8",
+      campaigns: "0",
+      confirmations: "0",
+      data_mining: "0",
+      follow_up: "3",
+      sms: "0",
+      sales: "274",
+    },
+    {
+      dealer: "Goyanda Kia",
+      total_apts: "307",
+      daily_avg: "9.17",
+      campaigns: "5",
+      confirmations: "0",
+      data_mining: "0",
+      follow_up: "6",
+      sms: "0",
+      sales: "307",
+    },
+    {
+      dealer: "Daytona Mitsubishi",
+      total_apts: "194",
+      daily_avg: "8.83",
+      campaigns: "0",
+      confirmations: "0",
+      data_mining: "0",
+      follow_up: "3",
+      sms: "0",
+      sales: "194",
+    },
   ];
 
   const ringCentralStats = [
-    { agent: "Adrian Mclaughlin", today_calls: "305", month_calls: "5,572", avg_daily_calls: "341.12" },
-    { agent: "Alex Willhite", today_calls: "194", month_calls: "4,400", avg_daily_calls: "88.6" },
-    { agent: "Amanda Jones", today_calls: "330", month_calls: "7,659", avg_daily_calls: "595.22" },
-    { agent: "Jonathan Gonzalez", today_calls: "168", month_calls: "5,506", avg_daily_calls: "334.5" },
-    { agent: "Other John Stockton", today_calls: "187", month_calls: "4,522", avg_daily_calls: "257.5" },
+    {
+      agent: "Adrian Mclaughlin",
+      today_calls: "305",
+      month_calls: "5,572",
+      avg_daily_calls: "341.12",
+    },
+    {
+      agent: "Alex Willhite",
+      today_calls: "194",
+      month_calls: "4,400",
+      avg_daily_calls: "88.6",
+    },
+    {
+      agent: "Amanda Jones",
+      today_calls: "330",
+      month_calls: "7,659",
+      avg_daily_calls: "595.22",
+    },
+    {
+      agent: "Jonathan Gonzalez",
+      today_calls: "168",
+      month_calls: "5,506",
+      avg_daily_calls: "334.5",
+    },
+    {
+      agent: "Other John Stockton",
+      today_calls: "187",
+      month_calls: "4,522",
+      avg_daily_calls: "257.5",
+    },
   ];
 
   const formatDate = (date: Date | undefined) => {
     return date ? format(date, "dd/MM/yyyy") : "06/27/2025";
+  };
+  useEffect(() => {
+    loadData();
+  }, []);
+  const loadData = () => {
+    apiRequest("GET", "dashboard/admin-stats").then((data) => {
+      setSummaryStats(data.summary);
+    });
+  };
+  const getIcon = (iconName: string) => {
+    if (iconName === "users-icon") return "👥";
+    if (iconName === "appointments-icon") return "📅";
+    if (iconName === "dealers-icon") return "🏢";
+    if (iconName === "today-appointments-icon") return "📆";
+    if (iconName === "monthly-appointments-icon") return "🗓️";
   };
 
   return (
@@ -112,8 +395,10 @@ export default function Dashboard() {
           <Card key={index} className="border">
             <CardContent className="p-4">
               <div className="flex items-center gap-3">
-                <div className={`w-12 h-12 rounded-lg ${stat.color} flex items-center justify-center text-2xl`}>
-                  {stat.icon}
+                <div
+                  className={`w-12 h-12 rounded-lg ${stat.color} flex items-center justify-center text-2xl`}
+                >
+                  {getIcon(stat.icon)}
                 </div>
                 <div>
                   <div className="text-2xl font-bold">{stat.value}</div>
@@ -128,11 +413,14 @@ export default function Dashboard() {
       {/* Data Tables */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Today - Agent Stats */}
-        <Card>
+        {/* <Card>
           <CardHeader>
             <CardTitle className="text-sm">Today - Agent Stats</CardTitle>
             <div className="flex items-center gap-2">
-              <Popover open={calendarStates.todayAgent} onOpenChange={(isOpen) => setCalendarOpen('todayAgent', isOpen)}>
+              <Popover
+                open={calendarStates.todayAgent}
+                onOpenChange={(isOpen) => setCalendarOpen("todayAgent", isOpen)}
+              >
                 <PopoverTrigger asChild>
                   <Button variant="outline" size="sm" className="text-xs">
                     <CalendarIcon className="mr-1 h-3 w-3" />
@@ -166,26 +454,41 @@ export default function Dashboard() {
                     <TableCell className="text-xs">{row.agent}</TableCell>
                     <TableCell className="text-xs">{row.apts_today}</TableCell>
                     <TableCell className="text-xs">{row.last_apt}</TableCell>
-                    <TableCell className="text-xs">{row.hourly_avg_apts}</TableCell>
+                    <TableCell className="text-xs">
+                      {row.hourly_avg_apts}
+                    </TableCell>
                   </TableRow>
                 ))}
               </TableBody>
             </Table>
             <div className="flex justify-center mt-4">
-              <Button size="sm" className="bg-blue-600 text-white">1</Button>
-              <Button variant="outline" size="sm" className="ml-1">2</Button>
-              <Button variant="outline" size="sm" className="ml-1">3</Button>
-              <Button variant="outline" size="sm" className="ml-1">Next</Button>
+              <Button size="sm" className="bg-blue-600 text-white">
+                1
+              </Button>
+              <Button variant="outline" size="sm" className="ml-1">
+                2
+              </Button>
+              <Button variant="outline" size="sm" className="ml-1">
+                3
+              </Button>
+              <Button variant="outline" size="sm" className="ml-1">
+                Next
+              </Button>
             </div>
           </CardContent>
-        </Card>
+        </Card> */}
 
         {/* Today - Dealer Stats */}
-        <Card>
+        {/* <Card>
           <CardHeader>
             <CardTitle className="text-sm">Today - Dealer Stats</CardTitle>
             <div className="flex items-center gap-2">
-              <Popover open={calendarStates.todayDealer} onOpenChange={(isOpen) => setCalendarOpen('todayDealer', isOpen)}>
+              <Popover
+                open={calendarStates.todayDealer}
+                onOpenChange={(isOpen) =>
+                  setCalendarOpen("todayDealer", isOpen)
+                }
+              >
                 <PopoverTrigger asChild>
                   <Button variant="outline" size="sm" className="text-xs">
                     <CalendarIcon className="mr-1 h-3 w-3" />
@@ -219,22 +522,32 @@ export default function Dashboard() {
                     <TableCell className="text-xs">{row.dealer}</TableCell>
                     <TableCell className="text-xs">{row.apts_today}</TableCell>
                     <TableCell className="text-xs">{row.last_apt}</TableCell>
-                    <TableCell className="text-xs">{row.hourly_avg_apts}</TableCell>
+                    <TableCell className="text-xs">
+                      {row.hourly_avg_apts}
+                    </TableCell>
                   </TableRow>
                 ))}
               </TableBody>
             </Table>
             <div className="flex justify-center mt-4">
-              <Button size="sm" className="bg-blue-600 text-white">1</Button>
-              <Button variant="outline" size="sm" className="ml-1">2</Button>
-              <Button variant="outline" size="sm" className="ml-1">3</Button>
-              <Button variant="outline" size="sm" className="ml-1">Next</Button>
+              <Button size="sm" className="bg-blue-600 text-white">
+                1
+              </Button>
+              <Button variant="outline" size="sm" className="ml-1">
+                2
+              </Button>
+              <Button variant="outline" size="sm" className="ml-1">
+                3
+              </Button>
+              <Button variant="outline" size="sm" className="ml-1">
+                Next
+              </Button>
             </div>
           </CardContent>
-        </Card>
+        </Card> */}
 
         {/* Today - Agent Stats By Department */}
-        <Card>
+        {/* <Card>
           <CardHeader>
             <CardTitle className="text-sm">Today - Agent Stats By Department</CardTitle>
             <div className="flex items-center gap-2">
@@ -246,7 +559,7 @@ export default function Dashboard() {
                   </Button>
                 </PopoverTrigger>
                 <PopoverContent className="w-auto p-0" align="start">
-                  <Calendar
+                  <
                     mode="single"
                     selected={todayAgentDeptDate}
                     onSelect={setTodayAgentDeptDate}
@@ -294,10 +607,10 @@ export default function Dashboard() {
               <Button variant="outline" size="sm" className="ml-1">Next</Button>
             </div>
           </CardContent>
-        </Card>
+        </Card> */}
 
         {/* Today - Dealer Stats By Department */}
-        <Card>
+        {/* <Card>
           <CardHeader>
             <CardTitle className="text-sm">Today - Dealer Stats By Department</CardTitle>
             <div className="flex items-center gap-2">
@@ -309,7 +622,7 @@ export default function Dashboard() {
                   </Button>
                 </PopoverTrigger>
                 <PopoverContent className="w-auto p-0" align="start">
-                  <Calendar
+                  <
                     mode="single"
                     selected={todayDealerDeptDate}
                     onSelect={setTodayDealerDeptDate}
@@ -357,10 +670,10 @@ export default function Dashboard() {
               <Button variant="outline" size="sm" className="ml-1">Next</Button>
             </div>
           </CardContent>
-        </Card>
+        </Card> */}
 
         {/* MTD - Agent Stats */}
-        <Card>
+        {/* <Card>
           <CardHeader>
             <CardTitle className="text-sm">MTD - Agent Stats</CardTitle>
             <div className="flex items-center gap-2">
@@ -372,7 +685,7 @@ export default function Dashboard() {
                   </Button>
                 </PopoverTrigger>
                 <PopoverContent className="w-auto p-0" align="start">
-                  <Calendar
+                  <
                     mode="single"
                     selected={mtdAgentDate}
                     onSelect={setMtdAgentDate}
@@ -422,10 +735,10 @@ export default function Dashboard() {
               <Button variant="outline" size="sm" className="ml-1">Next</Button>
             </div>
           </CardContent>
-        </Card>
+        </Card> */}
 
         {/* MTD - Dealer Stats */}
-        <Card>
+        {/* <Card>
           <CardHeader>
             <CardTitle className="text-sm">MTD - Dealer Stats</CardTitle>
             <div className="flex items-center gap-2">
@@ -437,7 +750,7 @@ export default function Dashboard() {
                   </Button>
                 </PopoverTrigger>
                 <PopoverContent className="w-auto p-0" align="start">
-                  <Calendar
+                  <
                     mode="single"
                     selected={mtdDealerDate}
                     onSelect={setMtdDealerDate}
@@ -487,11 +800,11 @@ export default function Dashboard() {
               <Button variant="outline" size="sm" className="ml-1">Next</Button>
             </div>
           </CardContent>
-        </Card>
+        </Card> */}
       </div>
 
       {/* RingCentral Call - Agent Stats (Full Width) */}
-      <Card>
+      {/* <Card>
         <CardHeader>
           <CardTitle className="text-sm">RingCentral Call - Agent Stats</CardTitle>
           <div className="flex items-center gap-2">
@@ -503,7 +816,7 @@ export default function Dashboard() {
                 </Button>
               </PopoverTrigger>
               <PopoverContent className="w-auto p-0" align="start">
-                <Calendar
+                <
                   mode="single"
                   selected={ringCentralDate}
                   onSelect={setRingCentralDate}
@@ -541,7 +854,7 @@ export default function Dashboard() {
             <Button variant="outline" size="sm" className="ml-1">Next</Button>
           </div>
         </CardContent>
-      </Card>
+      </Card> */}
     </div>
   );
 }

@@ -117,7 +117,9 @@ export default function AppointmentHistory() {
   };
 
   const handleDeleteAppointment = (appointmentId: number) => {
-    console.log("Delete appointment:", appointmentId);
+    apiRequest("DELETE", `appointment/delete/${appointmentId}`).then(() => {
+      loadData();
+    });
   };
 
   return (

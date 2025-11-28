@@ -1,13 +1,25 @@
-import { useState } from "react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { Calendar } from "@/components/ui/calendar";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { Calendar } from "@/components/ui/calendar";
-import { User, Lock, Calendar as CalendarIcon } from "lucide-react";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import { apiRequest } from "@/lib/queryClient";
 import { format } from "date-fns";
+import { Calendar as CalendarIcon, Lock, User } from "lucide-react";
+import { useEffect, useState } from "react";
 
 type TabType = "schedule" | "password" | "profile";
 
@@ -21,12 +33,12 @@ interface ShiftTime {
 
 export default function ScheduleShift() {
   const [activeTab, setActiveTab] = useState<TabType>("profile");
-  
+
   // Password form state
   const [currentPassword, setCurrentPassword] = useState("");
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
-  
+
   // Profile form state
   const [name, setName] = useState("Admin Admin");
   const [email, setEmail] = useState("manager@truebdc.com");
@@ -36,34 +48,82 @@ export default function ScheduleShift() {
   const [selectedDates, setSelectedDates] = useState<Date[]>([]);
   const [isCalendarOpen, setIsCalendarOpen] = useState(false);
   const [shiftTimes, setShiftTimes] = useState<ShiftTime[]>([]);
+  const [user, setUser] = useState<any>(null);
 
   // Time picker states
-  const [timePickerOpen, setTimePickerOpen] = useState<{day: string; field: string} | null>(null);
+  const [timePickerOpen, setTimePickerOpen] = useState<{
+    day: string;
+    field: string;
+  } | null>(null);
+  useEffect(() => {
+    getUser();
+  }, []);
+  const getUser = () => {
+    apiRequest("GET", "me").then((data) => {
+      setName(data.user.name);
+      setEmail(data.user.email);
+      setPhone(data.user.phone || "");
+    });
+  };
+  const handleUpdateProfile = () => {
+    apiRequest("PUT", "me/update", {
+      name,
+      email,
+      phone,
+    }).then((data) => {
+      loadProfile();
+    });
+  };
+  const handleChangePassword = () => {
+    if (newPassword !== confirmPassword) {
+      // Handle password mismatch error
+      alert("New password and confirm password do not match.");
+      return;
+    }
+    apiRequest("PUT", "me/change-password", {
+      oldPassword: currentPassword,
+      newPassword: newPassword,
+    }).then((data) => {
+      // Password changed successfully
+    });
+  };
 
   // Handle date selection
   const handleDateSelect = (dates: Date[] | undefined) => {
     if (dates) {
       setSelectedDates(dates);
       // Create shift entries for selected dates
-      const newShifts: ShiftTime[] = dates.map(date => ({
+      const newShifts: ShiftTime[] = dates.map((date) => ({
         day: format(date, "MM/dd/yyyy"),
         startTime: "8:00 AM",
         endTime: "5:00 PM",
         lunchStart: "2:00 PM",
-        lunchEnd: "3:00 PM"
+        lunchEnd: "3:00 PM",
       }));
       setShiftTimes(newShifts);
     }
   };
 
   // Time picker component
-  const TimePicker = ({ value, onChange }: { value: string; onChange: (time: string) => void }) => {
+  const TimePicker = ({
+    value,
+    onChange,
+  }: {
+    value: string;
+    onChange: (time: string) => void;
+  }) => {
     const [hour, setHour] = useState(value.split(":")[0] || "12");
-    const [minute, setMinute] = useState(value.split(":")[1]?.split(" ")[0] || "00");
+    const [minute, setMinute] = useState(
+      value.split(":")[1]?.split(" ")[0] || "00"
+    );
     const [period, setPeriod] = useState(value.includes("PM") ? "PM" : "AM");
 
-    const hours = Array.from({ length: 12 }, (_, i) => String(i + 1).padStart(2, "0"));
-    const minutes = Array.from({ length: 60 }, (_, i) => String(i).padStart(2, "0"));
+    const hours = Array.from({ length: 12 }, (_, i) =>
+      String(i + 1).padStart(2, "0")
+    );
+    const minutes = Array.from({ length: 60 }, (_, i) =>
+      String(i).padStart(2, "0")
+    );
 
     const handleApply = () => {
       onChange(`${hour}:${minute} ${period}`);
@@ -82,7 +142,9 @@ export default function ScheduleShift() {
               data-testid="select-hour"
             >
               {hours.map((h) => (
-                <option key={h} value={h}>{h}</option>
+                <option key={h} value={h}>
+                  {h}
+                </option>
               ))}
             </select>
           </div>
@@ -95,7 +157,9 @@ export default function ScheduleShift() {
               data-testid="select-minute"
             >
               {minutes.map((m) => (
-                <option key={m} value={m}>{m}</option>
+                <option key={m} value={m}>
+                  {m}
+                </option>
               ))}
             </select>
           </div>
@@ -112,8 +176,8 @@ export default function ScheduleShift() {
             </select>
           </div>
         </div>
-        <Button 
-          onClick={handleApply} 
+        <Button
+          onClick={handleApply}
           className="w-full bg-blue-600 hover:bg-blue-700 text-white"
           data-testid="button-apply-time"
         >
@@ -123,7 +187,11 @@ export default function ScheduleShift() {
     );
   };
 
-  const updateShiftTime = (index: number, field: keyof ShiftTime, value: string) => {
+  const updateShiftTime = (
+    index: number,
+    field: keyof ShiftTime,
+    value: string
+  ) => {
     const newShifts = [...shiftTimes];
     newShifts[index][field] = value;
     setShiftTimes(newShifts);
@@ -135,13 +203,13 @@ export default function ScheduleShift() {
         <Label className="text-base font-semibold mb-3 block">Schedule</Label>
         <Popover open={isCalendarOpen} onOpenChange={setIsCalendarOpen}>
           <PopoverTrigger asChild>
-            <div 
+            <div
               className="bg-gray-100 hover:bg-gray-200 p-4 rounded-lg cursor-pointer transition-colors min-h-[60px] flex items-center"
               data-testid="button-open-calendar"
             >
               <p className="text-sm text-gray-700">
-                {selectedDates.length > 0 
-                  ? selectedDates.map(d => format(d, "MM/dd/yyyy")).join(", ")
+                {selectedDates.length > 0
+                  ? selectedDates.map((d) => format(d, "MM/dd/yyyy")).join(", ")
                   : "Click to select dates"}
               </p>
             </div>
@@ -156,7 +224,7 @@ export default function ScheduleShift() {
           </PopoverContent>
         </Popover>
       </div>
-      
+
       <div>
         <Label className="text-base font-semibold mb-3 block">Shift</Label>
         <div className="border rounded-lg overflow-hidden">
@@ -164,10 +232,18 @@ export default function ScheduleShift() {
             <TableHeader>
               <TableRow className="bg-gray-50">
                 <TableHead className="text-center font-semibold">Day</TableHead>
-                <TableHead className="text-center font-semibold">Start Time</TableHead>
-                <TableHead className="text-center font-semibold">End Time</TableHead>
-                <TableHead className="text-center font-semibold">Lunch Start Time</TableHead>
-                <TableHead className="text-center font-semibold">Lunch End Time</TableHead>
+                <TableHead className="text-center font-semibold">
+                  Start Time
+                </TableHead>
+                <TableHead className="text-center font-semibold">
+                  End Time
+                </TableHead>
+                <TableHead className="text-center font-semibold">
+                  Lunch Start Time
+                </TableHead>
+                <TableHead className="text-center font-semibold">
+                  Lunch End Time
+                </TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -176,93 +252,141 @@ export default function ScheduleShift() {
                   <TableRow key={index}>
                     <TableCell className="text-center">{shift.day}</TableCell>
                     <TableCell className="text-center">
-                      <Popover 
-                        open={timePickerOpen?.day === shift.day && timePickerOpen?.field === "startTime"}
-                        onOpenChange={(open) => !open && setTimePickerOpen(null)}
+                      <Popover
+                        open={
+                          timePickerOpen?.day === shift.day &&
+                          timePickerOpen?.field === "startTime"
+                        }
+                        onOpenChange={(open) =>
+                          !open && setTimePickerOpen(null)
+                        }
                       >
                         <PopoverTrigger asChild>
                           <Button
                             variant="outline"
                             className="bg-gray-100 hover:bg-gray-200 border-gray-300"
-                            onClick={() => setTimePickerOpen({day: shift.day, field: "startTime"})}
+                            onClick={() =>
+                              setTimePickerOpen({
+                                day: shift.day,
+                                field: "startTime",
+                              })
+                            }
                             data-testid={`button-start-time-${index}`}
                           >
                             {shift.startTime}
                           </Button>
                         </PopoverTrigger>
                         <PopoverContent className="w-auto p-0">
-                          <TimePicker 
+                          <TimePicker
                             value={shift.startTime}
-                            onChange={(time) => updateShiftTime(index, "startTime", time)}
+                            onChange={(time) =>
+                              updateShiftTime(index, "startTime", time)
+                            }
                           />
                         </PopoverContent>
                       </Popover>
                     </TableCell>
                     <TableCell className="text-center">
-                      <Popover 
-                        open={timePickerOpen?.day === shift.day && timePickerOpen?.field === "endTime"}
-                        onOpenChange={(open) => !open && setTimePickerOpen(null)}
+                      <Popover
+                        open={
+                          timePickerOpen?.day === shift.day &&
+                          timePickerOpen?.field === "endTime"
+                        }
+                        onOpenChange={(open) =>
+                          !open && setTimePickerOpen(null)
+                        }
                       >
                         <PopoverTrigger asChild>
                           <Button
                             variant="outline"
                             className="bg-gray-100 hover:bg-gray-200 border-gray-300"
-                            onClick={() => setTimePickerOpen({day: shift.day, field: "endTime"})}
+                            onClick={() =>
+                              setTimePickerOpen({
+                                day: shift.day,
+                                field: "endTime",
+                              })
+                            }
                             data-testid={`button-end-time-${index}`}
                           >
                             {shift.endTime}
                           </Button>
                         </PopoverTrigger>
                         <PopoverContent className="w-auto p-0">
-                          <TimePicker 
+                          <TimePicker
                             value={shift.endTime}
-                            onChange={(time) => updateShiftTime(index, "endTime", time)}
+                            onChange={(time) =>
+                              updateShiftTime(index, "endTime", time)
+                            }
                           />
                         </PopoverContent>
                       </Popover>
                     </TableCell>
                     <TableCell className="text-center">
-                      <Popover 
-                        open={timePickerOpen?.day === shift.day && timePickerOpen?.field === "lunchStart"}
-                        onOpenChange={(open) => !open && setTimePickerOpen(null)}
+                      <Popover
+                        open={
+                          timePickerOpen?.day === shift.day &&
+                          timePickerOpen?.field === "lunchStart"
+                        }
+                        onOpenChange={(open) =>
+                          !open && setTimePickerOpen(null)
+                        }
                       >
                         <PopoverTrigger asChild>
                           <Button
                             variant="outline"
                             className="bg-yellow-400 hover:bg-yellow-500 border-yellow-500 text-gray-900"
-                            onClick={() => setTimePickerOpen({day: shift.day, field: "lunchStart"})}
+                            onClick={() =>
+                              setTimePickerOpen({
+                                day: shift.day,
+                                field: "lunchStart",
+                              })
+                            }
                             data-testid={`button-lunch-start-${index}`}
                           >
                             {shift.lunchStart}
                           </Button>
                         </PopoverTrigger>
                         <PopoverContent className="w-auto p-0">
-                          <TimePicker 
+                          <TimePicker
                             value={shift.lunchStart}
-                            onChange={(time) => updateShiftTime(index, "lunchStart", time)}
+                            onChange={(time) =>
+                              updateShiftTime(index, "lunchStart", time)
+                            }
                           />
                         </PopoverContent>
                       </Popover>
                     </TableCell>
                     <TableCell className="text-center">
-                      <Popover 
-                        open={timePickerOpen?.day === shift.day && timePickerOpen?.field === "lunchEnd"}
-                        onOpenChange={(open) => !open && setTimePickerOpen(null)}
+                      <Popover
+                        open={
+                          timePickerOpen?.day === shift.day &&
+                          timePickerOpen?.field === "lunchEnd"
+                        }
+                        onOpenChange={(open) =>
+                          !open && setTimePickerOpen(null)
+                        }
                       >
                         <PopoverTrigger asChild>
                           <Button
                             variant="outline"
                             className="bg-yellow-400 hover:bg-yellow-500 border-yellow-500 text-gray-900"
-                            onClick={() => setTimePickerOpen({day: shift.day, field: "lunchEnd"})}
+                            onClick={() =>
+                              setTimePickerOpen({
+                                day: shift.day,
+                                field: "lunchEnd",
+                              })
+                            }
                             data-testid={`button-lunch-end-${index}`}
                           >
                             {shift.lunchEnd}
                           </Button>
                         </PopoverTrigger>
                         <PopoverContent className="w-auto p-0">
-                          <TimePicker 
+                          <TimePicker
                             value={shift.lunchEnd}
-                            onChange={(time) => updateShiftTime(index, "lunchEnd", time)}
+                            onChange={(time) =>
+                              updateShiftTime(index, "lunchEnd", time)
+                            }
                           />
                         </PopoverContent>
                       </Popover>
@@ -271,7 +395,10 @@ export default function ScheduleShift() {
                 ))
               ) : (
                 <TableRow>
-                  <TableCell colSpan={5} className="text-center py-8 text-gray-500">
+                  <TableCell
+                    colSpan={5}
+                    className="text-center py-8 text-gray-500"
+                  >
                     Select dates above to create shift schedule
                   </TableCell>
                 </TableRow>
@@ -279,9 +406,9 @@ export default function ScheduleShift() {
             </TableBody>
           </Table>
         </div>
-        
+
         <div className="flex justify-end mt-4">
-          <Button 
+          <Button
             className="bg-blue-600 hover:bg-blue-700 text-white"
             data-testid="button-change-schedule-shift"
           >
@@ -296,7 +423,9 @@ export default function ScheduleShift() {
     <div className="space-y-6 max-w-2xl">
       <div className="space-y-4">
         <div>
-          <Label htmlFor="current-password" className="text-sm font-medium">Current Password</Label>
+          <Label htmlFor="current-password" className="text-sm font-medium">
+            Current Password
+          </Label>
           <Input
             id="current-password"
             type="password"
@@ -309,7 +438,9 @@ export default function ScheduleShift() {
         </div>
 
         <div>
-          <Label htmlFor="new-password" className="text-sm font-medium">New Password</Label>
+          <Label htmlFor="new-password" className="text-sm font-medium">
+            New Password
+          </Label>
           <Input
             id="new-password"
             type="password"
@@ -322,7 +453,9 @@ export default function ScheduleShift() {
         </div>
 
         <div>
-          <Label htmlFor="confirm-password" className="text-sm font-medium">Confirm New Password</Label>
+          <Label htmlFor="confirm-password" className="text-sm font-medium">
+            Confirm New Password
+          </Label>
           <Input
             id="confirm-password"
             type="password"
@@ -337,7 +470,9 @@ export default function ScheduleShift() {
 
       <div className="bg-white border rounded-lg p-4">
         <h4 className="font-semibold mb-2 text-base">Password requirements:</h4>
-        <p className="text-sm text-gray-600 mb-3">Ensure that these requirements are met:</p>
+        <p className="text-sm text-gray-600 mb-3">
+          Ensure that these requirements are met:
+        </p>
         <ul className="text-sm text-gray-700 space-y-2">
           <li className="flex items-center gap-2">
             <span className="w-1.5 h-1.5 bg-gray-600 rounded-full"></span>
@@ -359,7 +494,8 @@ export default function ScheduleShift() {
       </div>
 
       <div className="flex justify-end">
-        <Button 
+        <Button
+          onClick={handleChangePassword}
           className="bg-blue-600 hover:bg-blue-700 text-white"
           data-testid="button-change-password"
         >
@@ -375,19 +511,21 @@ export default function ScheduleShift() {
         <div className="flex flex-col items-start">
           <Label className="text-sm font-medium mb-2">Profile</Label>
           <div className="w-24 h-24 bg-gradient-to-br from-blue-500 to-blue-700 rounded-full flex items-center justify-center shadow-lg">
-            <svg 
-              className="w-16 h-16 text-white" 
-              fill="currentColor" 
+            <svg
+              className="w-16 h-16 text-white"
+              fill="currentColor"
               viewBox="0 0 24 24"
             >
-              <path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/>
+              <path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z" />
             </svg>
           </div>
         </div>
 
         <div className="space-y-4">
           <div>
-            <Label htmlFor="name" className="text-sm font-medium">Name</Label>
+            <Label htmlFor="name" className="text-sm font-medium">
+              Name
+            </Label>
             <Input
               id="name"
               value={name}
@@ -398,7 +536,9 @@ export default function ScheduleShift() {
           </div>
 
           <div>
-            <Label htmlFor="email" className="text-sm font-medium">Email</Label>
+            <Label htmlFor="email" className="text-sm font-medium">
+              Email
+            </Label>
             <Input
               id="email"
               type="email"
@@ -410,7 +550,9 @@ export default function ScheduleShift() {
           </div>
 
           <div>
-            <Label htmlFor="phone" className="text-sm font-medium">Phone (Optional)</Label>
+            <Label htmlFor="phone" className="text-sm font-medium">
+              Phone (Optional)
+            </Label>
             <Input
               id="phone"
               value={phone}
@@ -423,7 +565,8 @@ export default function ScheduleShift() {
       </div>
 
       <div className="flex justify-end">
-        <Button 
+        <Button
+          onClick={handleUpdateProfile}
           className="bg-blue-600 hover:bg-blue-700 text-white"
           data-testid="button-update-profile"
         >
@@ -462,8 +605,8 @@ export default function ScheduleShift() {
         <button
           onClick={() => setActiveTab("profile")}
           className={`w-full flex items-center gap-3 px-4 py-2.5 text-left rounded-lg transition-colors text-sm ${
-            activeTab === "profile" 
-              ? "bg-blue-50 text-blue-600 font-medium" 
+            activeTab === "profile"
+              ? "bg-blue-50 text-blue-600 font-medium"
               : "text-gray-700 hover:bg-gray-100"
           }`}
           data-testid="nav-profile-setting"
@@ -471,12 +614,12 @@ export default function ScheduleShift() {
           <User className="h-4 w-4" />
           Profile Setting
         </button>
-        
+
         <button
           onClick={() => setActiveTab("password")}
           className={`w-full flex items-center gap-3 px-4 py-2.5 text-left rounded-lg transition-colors text-sm ${
-            activeTab === "password" 
-              ? "bg-blue-50 text-blue-600 font-medium" 
+            activeTab === "password"
+              ? "bg-blue-50 text-blue-600 font-medium"
               : "text-gray-700 hover:bg-gray-100"
           }`}
           data-testid="nav-change-password"
@@ -484,12 +627,12 @@ export default function ScheduleShift() {
           <Lock className="h-4 w-4" />
           Change Password
         </button>
-        
+
         <button
           onClick={() => setActiveTab("schedule")}
           className={`w-full flex items-center gap-3 px-4 py-2.5 text-left rounded-lg transition-colors text-sm ${
-            activeTab === "schedule" 
-              ? "bg-blue-50 text-blue-600 font-medium" 
+            activeTab === "schedule"
+              ? "bg-blue-50 text-blue-600 font-medium"
               : "text-gray-700 hover:bg-gray-100"
           }`}
           data-testid="nav-schedule-shift"

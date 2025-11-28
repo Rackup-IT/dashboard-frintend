@@ -30,214 +30,13 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { apiRequest } from "@/lib/queryClient";
+import { format } from "date-fns";
 import { Calendar, MoreHorizontal, Plus } from "lucide-react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useLocation } from "wouter";
 
 // Sample appointment data with all required fields
-const appointmentData = [
-  {
-    id: 1,
-    agent: "Admin Admin",
-    type: "Appointment",
-    appointmentDate: "10/28/2023",
-    appointmentTime: "11:00 AM",
-    customerName: "Diana Decker",
-    customerPhone: "8039142847",
-    dealer: "Downtown Toyota",
-    createdAt: "10/28/2023 01:35 PM",
-    department: "Sales",
-    scenario: "New",
-    vehicleOfInterest: "2023 Toyota RAV4 Prime",
-    stockNumber: "",
-    paymentSource: "Finance",
-    comment: "N/A",
-    leadSource: "Phone Line Up",
-    language: "English",
-  },
-  {
-    id: 2,
-    agent: "Admin Admin",
-    type: "Appointment",
-    appointmentDate: "10/28/2023",
-    appointmentTime: "01:00 PM",
-    customerName: "Alice Kissinger",
-    customerPhone: "2404252628",
-    dealer: "Downtown Toyota",
-    createdAt: "10/28/2023 01:43 PM",
-    department: "Sales",
-    scenario: "Used Vehicle",
-    vehicleOfInterest: "2022 Honda Civic",
-    stockNumber: "HC2022-01",
-    paymentSource: "Cash",
-    comment: "Looking for specific color",
-    leadSource: "Website",
-    language: "English",
-  },
-  {
-    id: 3,
-    agent: "Admin Admin",
-    type: "Appointment",
-    appointmentDate: "10/28/2023",
-    appointmentTime: "11:30 AM",
-    customerName: "Richard Truong",
-    customerPhone: "5103891616",
-    dealer: "Downtown Toyota",
-    createdAt: "10/28/2023 01:48 PM",
-    department: "Sales",
-    scenario: "Trade-In",
-    vehicleOfInterest: "2024 Toyota Camry",
-    stockNumber: "TC2024-05",
-    paymentSource: "Finance",
-    comment: "Has 2018 Honda Accord for trade",
-    leadSource: "Referral",
-    language: "English",
-  },
-  {
-    id: 4,
-    agent: "Admin Admin",
-    type: "Appointment",
-    appointmentDate: "10/29/2023",
-    appointmentTime: "08:30 AM",
-    customerName: "Amanda Pendergrass",
-    customerPhone: "5374881703",
-    dealer: "Navarre Chevrolet & Cadillac",
-    createdAt: "10/28/2023 01:55 PM",
-    department: "Sales",
-    scenario: "New",
-    vehicleOfInterest: "2023 Chevrolet Silverado",
-    stockNumber: "CS2023-12",
-    paymentSource: "Lease",
-    comment: "Interested in work truck package",
-    leadSource: "Walk-In",
-    language: "English",
-  },
-  {
-    id: 5,
-    agent: "Admin Admin",
-    type: "Appointment",
-    appointmentDate: "10/29/2023",
-    appointmentTime: "11:00 AM",
-    customerName: "Shadonna Saunders",
-    customerPhone: "(408) 469-1894",
-    dealer: "Downtown Toyota",
-    createdAt: "10/28/2023 01:56 PM",
-    department: "Service",
-    scenario: "Maintenance",
-    vehicleOfInterest: "N/A",
-    stockNumber: "",
-    paymentSource: "Cash",
-    comment: "Oil change and tire rotation",
-    leadSource: "Phone Call",
-    language: "English",
-  },
-  {
-    id: 6,
-    agent: "Admin Admin",
-    type: "Follow Up",
-    appointmentDate: "10/28/2023",
-    appointmentTime: "12:00 PM",
-    customerName: "Paolo Durand",
-    customerPhone: "6195005524",
-    dealer: "Downtown Toyota",
-    createdAt: "10/28/2023 02:06 PM",
-    department: "Sales",
-    scenario: "Follow Up",
-    vehicleOfInterest: "2023 Toyota Highlander",
-    stockNumber: "",
-    paymentSource: "Finance",
-    comment: "Following up on previous inquiry",
-    leadSource: "Previous Customer",
-    language: "Spanish",
-  },
-  {
-    id: 7,
-    agent: "Admin Admin",
-    type: "Appointment",
-    appointmentDate: "10/28/2023",
-    appointmentTime: "12:30 PM",
-    customerName: "Nancy Bamberger",
-    customerPhone: "(973) 890-6822",
-    dealer: "Downtown Toyota",
-    createdAt: "10/28/2023 02:24 PM",
-    department: "Sales",
-    scenario: "New",
-    vehicleOfInterest: "2024 Toyota RAV4 Hybrid",
-    stockNumber: "TR2024-08",
-    paymentSource: "Finance",
-    comment: "Prefers white or silver",
-    leadSource: "Social Media",
-    language: "English",
-  },
-  {
-    id: 8,
-    agent: "Admin Admin",
-    type: "Appointment",
-    appointmentDate: "10/28/2023",
-    appointmentTime: "02:00 PM",
-    customerName: "Silvia Ng",
-    customerPhone: "(425) 277-6636",
-    dealer: "Downtown Toyota",
-    createdAt: "10/28/2023 02:50 PM",
-    department: "Sales",
-    scenario: "Certified Pre-Owned",
-    vehicleOfInterest: "2021 Toyota Corolla",
-    stockNumber: "CPO2021-03",
-    paymentSource: "Cash",
-    comment: "N/A",
-    leadSource: "Advertisement",
-    language: "English",
-  },
-  {
-    id: 9,
-    agent: "Admin Admin",
-    type: "Appointment",
-    appointmentDate: "10/30/2023",
-    appointmentTime: "09:00 PM",
-    customerName: "Dericko Diaz",
-    customerPhone: "700-710-1704",
-    dealer: "Nissan of San Juan Capistrano",
-    createdAt: "10/28/2023 03:03 PM",
-    department: "Sales",
-    scenario: "New",
-    vehicleOfInterest: "2024 Nissan Altima",
-    stockNumber: "NA2024-15",
-    paymentSource: "Finance",
-    comment: "First time buyer",
-    leadSource: "Phone Call",
-    language: "English",
-  },
-  {
-    id: 10,
-    agent: "Admin Admin",
-    type: "Appointment",
-    appointmentDate: "10/29/2023",
-    appointmentTime: "02:00 PM",
-    customerName: "Ashley Ruiz",
-    customerPhone: "(408) 439-4600",
-    dealer: "Downtown Toyota",
-    createdAt: "10/28/2023 06:03 PM",
-    department: "Sales",
-    scenario: "New",
-    vehicleOfInterest: "2023 Toyota Prius",
-    stockNumber: "TP2023-22",
-    paymentSource: "Lease",
-    comment: "Looking for best fuel economy",
-    leadSource: "Website",
-    language: "Spanish",
-  },
-];
-
-const dealerships = [
-  "Downtown Toyota",
-  "Navarre Chevrolet & Cadillac",
-  "Nissan of San Juan Capistrano",
-  "All American Chevrolet of Midland",
-  "Andrews Auto",
-  "Augusta Mitsubishi",
-  "Daytona Kia",
-  "Daytona Mitsubishi",
-];
 
 export default function AppointmentHistory() {
   const [, setLocation] = useLocation();
@@ -250,19 +49,44 @@ export default function AppointmentHistory() {
     (typeof appointmentData)[0] | null
   >(null);
   const [isViewDialogOpen, setIsViewDialogOpen] = useState(false);
+  const [appointmentData, setAppointmentData] = useState([]);
+  const [dealerships, setDealerships] = useState([]);
+  const [users, setUsers] = useState(["All Users"]);
+  const [toalPages, setTotalPages] = useState(1);
+  const formatDate = (dateStr: string) => {
+    const date = new Date(dateStr);
+    return format(date, "MM/dd/yyyy");
+  };
+  useEffect(() => {
+    loadData();
+  }, []);
+  const loadData = () => {
+    apiRequest("GET", "appointment/get-all").then((data) => {
+      setAppointmentData(data.appointments);
+      setTotalPages(data.totalPages);
+    });
+    apiRequest("GET", "dealer/get-all").then((data) => {
+      const dealerNames = data.dealers.map(
+        (dealer: { name: string }) => dealer.dealerName
+      );
+      setDealerships(dealerNames);
+    });
+    apiRequest("GET", "users").then((data) => {
+      const userNames = data.users.map((user: { name: string }) => user.name);
+      setUsers(["All Users", ...userNames]);
+    });
+  };
 
   // Filter appointments based on search criteria
   const filteredAppointments = appointmentData.filter((appointment) => {
     const matchesSearch =
       searchTerm === "" ||
-      appointment.customerName
-        .toLowerCase()
-        .includes(searchTerm.toLowerCase()) ||
-      appointment.agent.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      appointment.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      appointment.agentName.toLowerCase().includes(searchTerm.toLowerCase()) ||
       appointment.type.toLowerCase().includes(searchTerm.toLowerCase());
 
     const matchesPhone =
-      phoneSearch === "" || appointment.customerPhone.includes(phoneSearch);
+      phoneSearch === "" || appointment.phone.includes(phoneSearch);
 
     const matchesDealership =
       selectedDealership === "" ||
@@ -290,8 +114,9 @@ export default function AppointmentHistory() {
   };
 
   const handleDeleteAppointment = (appointmentId: number) => {
-    console.log("Delete appointment:", appointmentId);
-    // Add delete logic here
+    apiRequest("DELETE", `appointment/delete/${appointmentId}`).then(() => {
+      loadData();
+    });
   };
 
   return (
@@ -356,8 +181,8 @@ export default function AppointmentHistory() {
                   <SelectContent>
                     <SelectItem value="all">All Dealerships</SelectItem>
                     {dealerships.map((dealer) => (
-                      <SelectItem key={dealer} value={dealer}>
-                        {dealer}
+                      <SelectItem key={dealer._id} value={dealer._id}>
+                        {dealer.dealerName}
                       </SelectItem>
                     ))}
                   </SelectContent>
@@ -416,19 +241,19 @@ export default function AppointmentHistory() {
                 </TableHeader>
                 <TableBody>
                   {currentAppointments.map((appointment) => (
-                    <TableRow key={appointment.id}>
+                    <TableRow key={appointment._id}>
                       <TableCell className="text-sm">
-                        {appointment.agent}
+                        {appointment.agentName}
                       </TableCell>
                       <TableCell>
                         <Badge
                           variant={
-                            appointment.type === "Appointment"
+                            appointment.type === "appointment"
                               ? "default"
                               : "secondary"
                           }
                           className={
-                            appointment.type === "Appointment"
+                            appointment.type === "appointment"
                               ? "bg-blue-100 text-blue-800"
                               : "bg-gray-100 text-gray-800"
                           }
@@ -443,16 +268,16 @@ export default function AppointmentHistory() {
                         {appointment.appointmentTime}
                       </TableCell>
                       <TableCell className="text-sm">
-                        {appointment.customerName}
+                        {appointment.name}
                       </TableCell>
                       <TableCell className="text-sm">
-                        {appointment.customerPhone}
+                        {appointment.phone}
                       </TableCell>
                       <TableCell className="text-sm">
-                        {appointment.dealer}
+                        {appointment.dealer.dealerName}
                       </TableCell>
                       <TableCell className="text-sm">
-                        {appointment.createdAt}
+                        {formatDate(appointment.createdAt)}
                       </TableCell>
                       <TableCell>
                         <DropdownMenu>
@@ -460,7 +285,7 @@ export default function AppointmentHistory() {
                             <Button
                               variant="ghost"
                               size="sm"
-                              data-testid={`button-action-${appointment.id}`}
+                              data-testid={`button-action-${appointment._id}`}
                             >
                               <MoreHorizontal className="h-4 w-4" />
                             </Button>
@@ -468,16 +293,16 @@ export default function AppointmentHistory() {
                           <DropdownMenuContent align="end">
                             <DropdownMenuItem
                               onClick={() => handleViewAppointment(appointment)}
-                              data-testid={`menu-view-${appointment.id}`}
+                              data-testid={`menu-view-${appointment._id}`}
                             >
                               View
                             </DropdownMenuItem>
                             <DropdownMenuItem
                               className="text-red-600"
                               onClick={() =>
-                                handleDeleteAppointment(appointment.id)
+                                handleDeleteAppointment(appointment._id)
                               }
-                              data-testid={`menu-delete-${appointment.id}`}
+                              data-testid={`menu-delete-${appointment._id}`}
                             >
                               Delete
                             </DropdownMenuItem>
@@ -562,7 +387,7 @@ export default function AppointmentHistory() {
                 <div>
                   <span className="font-semibold text-gray-700">Dealer :</span>
                   <span className="ml-2 text-gray-900">
-                    {selectedAppointment.dealer}
+                    {selectedAppointment.dealer.dealerName}
                   </span>
                 </div>
 
@@ -578,14 +403,14 @@ export default function AppointmentHistory() {
                     Customer :
                   </span>
                   <span className="ml-2 text-gray-900">
-                    {selectedAppointment.customerName}
+                    {selectedAppointment.name}
                   </span>
                 </div>
 
                 <div>
                   <span className="font-semibold text-gray-700">Phone # :</span>
                   <span className="ml-2 text-gray-900">
-                    {selectedAppointment.customerPhone}
+                    {selectedAppointment.phone}
                   </span>
                 </div>
 
@@ -608,7 +433,7 @@ export default function AppointmentHistory() {
                     Department :
                   </span>
                   <span className="ml-2 text-gray-900">
-                    {selectedAppointment.department}
+                    {selectedAppointment.department.name}
                   </span>
                 </div>
 
@@ -617,7 +442,7 @@ export default function AppointmentHistory() {
                     Scenario :
                   </span>
                   <span className="ml-2 text-gray-900">
-                    {selectedAppointment.scenario}
+                    {selectedAppointment.scenario.name}
                   </span>
                 </div>
 
@@ -658,7 +483,7 @@ export default function AppointmentHistory() {
                     Lead Source :
                   </span>
                   <span className="ml-2 text-gray-900">
-                    {selectedAppointment.leadSource}
+                    {selectedAppointment.leadSource.name}
                   </span>
                 </div>
 

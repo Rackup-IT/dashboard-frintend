@@ -4,6 +4,7 @@ import {
   CollapsibleContent,
   CollapsibleTrigger,
 } from "@/components/ui/collapsible";
+import { apiRequest } from "@/lib/queryClient";
 import { cn } from "@/lib/utils";
 import {
   Bell,
@@ -23,7 +24,7 @@ import {
   UserCheck,
   Users,
 } from "lucide-react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Link, useLocation } from "wouter";
 // import companyLogo from "@assets/WhatsApp Image 2025-10-14 at 09.32.15_1761927208177.jpeg";
 
@@ -83,10 +84,19 @@ export default function Sidebar({ open, setOpen }: SidebarProps) {
   const [managerOpen, setManagerOpen] = useState(true);
   const [adminOpen, setAdminOpen] = useState(true);
   const [settingsOpen, setSettingsOpen] = useState(false);
+  const [user, setUser] = useState<any>(null);
 
   const isActive = (href: string) => {
     if (href === "/dashboard") return location === "/dashboard";
     return location.startsWith(href);
+  };
+  useEffect(() => {
+    getUser();
+  }, []);
+  const getUser = () => {
+    apiRequest("GET", "me").then((data) => {
+      setUser(data.user);
+    });
   };
 
   return (
@@ -124,7 +134,7 @@ export default function Sidebar({ open, setOpen }: SidebarProps) {
         <div className="p-4 border-b border-gray-200">
           <div className="flex items-center space-x-2">
             <User className="text-gray-400 h-5 w-5" />
-            <span className="text-sm text-gray-600">Hi, Admin Admin!</span>
+            <span className="text-sm text-gray-600">Hi, {user.name}</span>
           </div>
         </div>
 

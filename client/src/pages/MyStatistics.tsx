@@ -1,40 +1,11 @@
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
-import { Plus, BarChart3, Calendar, Phone, TrendingUp } from "lucide-react";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { apiRequest } from "@/lib/queryClient";
+import { BarChart3, Calendar, Plus } from "lucide-react";
+import { useEffect, useState } from "react";
 import { useLocation } from "wouter";
 
 // Statistics data matching the screenshot
-const todayStats = [
-  { label: "Total Appointments", value: "0", icon: "📅", color: "bg-green-100" },
-  { label: "Avg. Hourly Appointment", value: "0", icon: "📊", color: "bg-green-100" },
-  { label: "Total Follow Ups", value: "0", icon: "📞", color: "bg-purple-100" },
-  { label: "Avg. Hourly Follow Ups", value: "0", icon: "📈", color: "bg-purple-100" },
-];
-
-const todayCallStats = [
-  { label: "Total Calls", value: "0", icon: "📞", color: "bg-green-100" },
-  { label: "Avg. Hourly Calls", value: "0", icon: "📊", color: "bg-green-100" },
-];
-
-const monthToDateStats = [
-  { label: "Total Appointments", value: "42", icon: "📅", color: "bg-green-100" },
-  { label: "Avg. Daily Appointment", value: "162", icon: "📊", color: "bg-green-100" },
-  { label: "Total Follow Ups", value: "34", icon: "📞", color: "bg-purple-100" },
-  { label: "Avg. Daily Follow Up", value: "131", icon: "📈", color: "bg-purple-100" },
-];
-
-const monthToDateCallStats = [
-  { label: "Total Calls", value: "0", icon: "📞", color: "bg-green-100" },
-  { label: "Avg. Daily Calls", value: "0", icon: "📊", color: "bg-green-100" },
-];
-
-const lifetimeStats = [
-  { label: "Total Appointments", value: "450", icon: "📅", color: "bg-green-100" },
-  { label: "Average Daily Appointments", value: "726", icon: "📊", color: "bg-green-100" },
-  { label: "Total Follow Ups", value: "185", icon: "📞", color: "bg-purple-100" },
-  { label: "Average daily follow ups", value: "25", icon: "📈", color: "bg-purple-100" },
-];
 
 // Today Hourly Metrics data matching the screenshot
 const hourlyMetrics = [
@@ -51,9 +22,32 @@ const hourlyMetrics = [
 
 export default function MyStatistics() {
   const [, setLocation] = useLocation();
+  const [todayStats, setTodayStats] = useState([]);
+  const [monthToDateStats, setMonthToDateStats] = useState([]);
+  const [lifetimeStats, setLifetimeStats] = useState([]);
+  useEffect(() => {
+    loadStatsData();
+  }, []);
 
+  const loadStatsData = () => {
+    apiRequest("GET", "dashboard/member-stats").then((data) => {
+      setTodayStats(data.todaySummary);
+      setMonthToDateStats(data.monthlySummary);
+      setLifetimeStats(data.lifeTimeSummary);
+    });
+  };
   const handleAddAppointment = () => {
     setLocation("/dealer-notification");
+  };
+  const getIcon = (iconName: string) => {
+    switch (iconName) {
+      case "appointments-icon":
+        return <Calendar className="h-6 w-6 text-white" />;
+      case "avarage-icon":
+        return <BarChart3 className="h-6 w-6 text-white" />;
+      default:
+        return <BarChart3 className="h-6 w-6 text-white" />;
+    }
   };
 
   return (
@@ -70,7 +64,10 @@ export default function MyStatistics() {
                 </div>
               </div>
             </div>
-            <Button onClick={handleAddAppointment} className="bg-blue-600 hover:bg-blue-700 text-white">
+            <Button
+              onClick={handleAddAppointment}
+              className="bg-blue-600 hover:bg-blue-700 text-white"
+            >
               <Plus className="h-4 w-4 mr-2" />
               Appointment
             </Button>
@@ -86,36 +83,44 @@ export default function MyStatistics() {
                   <Card key={index} className="border">
                     <CardContent className="p-4">
                       <div className="flex items-center gap-3">
-                        <div className={`w-12 h-12 rounded-lg ${stat.color} flex items-center justify-center text-2xl`}>
-                          {stat.icon}
+                        <div
+                          className={`w-12 h-12 rounded-lg ${stat.color} flex items-center justify-center text-2xl`}
+                        >
+                          {getIcon(stat.icon)}
                         </div>
                         <div>
                           <div className="text-2xl font-bold">{stat.value}</div>
-                          <div className="text-sm text-gray-600">{stat.label}</div>
+                          <div className="text-sm text-gray-600">
+                            {stat.title}
+                          </div>
                         </div>
                       </div>
                     </CardContent>
                   </Card>
                 ))}
               </div>
-              
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+
+              {/* <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
                 {todayCallStats.map((stat, index) => (
                   <Card key={index} className="border">
                     <CardContent className="p-4">
                       <div className="flex items-center gap-3">
-                        <div className={`w-12 h-12 rounded-lg ${stat.color} flex items-center justify-center text-2xl`}>
+                        <div
+                          className={`w-12 h-12 rounded-lg ${stat.color} flex items-center justify-center text-2xl`}
+                        >
                           {stat.icon}
                         </div>
                         <div>
                           <div className="text-2xl font-bold">{stat.value}</div>
-                          <div className="text-sm text-gray-600">{stat.label}</div>
+                          <div className="text-sm text-gray-600">
+                            {stat.label}
+                          </div>
                         </div>
                       </div>
                     </CardContent>
                   </Card>
                 ))}
-              </div>
+              </div> */}
             </div>
 
             {/* Month To Date Section */}
@@ -126,36 +131,44 @@ export default function MyStatistics() {
                   <Card key={index} className="border">
                     <CardContent className="p-4">
                       <div className="flex items-center gap-3">
-                        <div className={`w-12 h-12 rounded-lg ${stat.color} flex items-center justify-center text-2xl`}>
-                          {stat.icon}
+                        <div
+                          className={`w-12 h-12 rounded-lg ${stat.color} flex items-center justify-center text-2xl`}
+                        >
+                          {getIcon(stat.icon)}
                         </div>
                         <div>
                           <div className="text-2xl font-bold">{stat.value}</div>
-                          <div className="text-sm text-gray-600">{stat.label}</div>
+                          <div className="text-sm text-gray-600">
+                            {stat.title}
+                          </div>
                         </div>
                       </div>
                     </CardContent>
                   </Card>
                 ))}
               </div>
-              
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+
+              {/* <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
                 {monthToDateCallStats.map((stat, index) => (
                   <Card key={index} className="border">
                     <CardContent className="p-4">
                       <div className="flex items-center gap-3">
-                        <div className={`w-12 h-12 rounded-lg ${stat.color} flex items-center justify-center text-2xl`}>
+                        <div
+                          className={`w-12 h-12 rounded-lg ${stat.color} flex items-center justify-center text-2xl`}
+                        >
                           {stat.icon}
                         </div>
                         <div>
                           <div className="text-2xl font-bold">{stat.value}</div>
-                          <div className="text-sm text-gray-600">{stat.label}</div>
+                          <div className="text-sm text-gray-600">
+                            {stat.label}
+                          </div>
                         </div>
                       </div>
                     </CardContent>
                   </Card>
                 ))}
-              </div>
+              </div> */}
             </div>
 
             {/* Lifetime Section */}
@@ -166,12 +179,16 @@ export default function MyStatistics() {
                   <Card key={index} className="border">
                     <CardContent className="p-4">
                       <div className="flex items-center gap-3">
-                        <div className={`w-12 h-12 rounded-lg ${stat.color} flex items-center justify-center text-2xl`}>
-                          {stat.icon}
+                        <div
+                          className={`w-12 h-12 rounded-lg ${stat.color} flex items-center justify-center text-2xl`}
+                        >
+                          {getIcon(stat.icon)}
                         </div>
                         <div>
                           <div className="text-2xl font-bold">{stat.value}</div>
-                          <div className="text-sm text-gray-600">{stat.label}</div>
+                          <div className="text-sm text-gray-600">
+                            {stat.title}
+                          </div>
                         </div>
                       </div>
                     </CardContent>
@@ -181,16 +198,23 @@ export default function MyStatistics() {
             </div>
 
             {/* Today Hourly Metrics Table */}
-            <div>
-              <h3 className="text-lg font-semibold mb-4">Today Hourly Metrics</h3>
+            {/* <div>
+              <h3 className="text-lg font-semibold mb-4">
+                Today Hourly Metrics
+              </h3>
               <Card className="border">
                 <CardContent className="p-0">
                   <Table>
                     <TableHeader>
                       <TableRow className="bg-gray-50">
-                        <TableHead className="text-center font-medium">Appointment</TableHead>
+                        <TableHead className="text-center font-medium">
+                          Appointment
+                        </TableHead>
                         {hourlyMetrics.map((metric) => (
-                          <TableHead key={metric.time} className="text-center font-medium">
+                          <TableHead
+                            key={metric.time}
+                            className="text-center font-medium"
+                          >
                             {metric.time}
                           </TableHead>
                         ))}
@@ -198,7 +222,9 @@ export default function MyStatistics() {
                     </TableHeader>
                     <TableBody>
                       <TableRow>
-                        <TableCell className="text-center font-medium">Appointment</TableCell>
+                        <TableCell className="text-center font-medium">
+                          Appointment
+                        </TableCell>
                         {hourlyMetrics.map((metric) => (
                           <TableCell key={metric.time} className="text-center">
                             {metric.appointments}
@@ -209,7 +235,7 @@ export default function MyStatistics() {
                   </Table>
                 </CardContent>
               </Card>
-            </div>
+            </div> */}
           </div>
         </CardContent>
       </Card>
