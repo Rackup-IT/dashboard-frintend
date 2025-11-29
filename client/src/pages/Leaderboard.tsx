@@ -48,6 +48,8 @@ export default function Leaderboard() {
   const [monthlyTotalPages, setMonthlyTotalPages] = useState(1);
   const [page, setPage] = useState(1);
   const [monthlyPage, setMonthlyPage] = useState(1);
+  const [count, setCount] = useState(0);
+  const [monthlyCount, setMonthlyCount] = useState(0);
   useEffect(() => {
     loadData();
   }, [appointmentType, department]);
@@ -59,10 +61,14 @@ export default function Leaderboard() {
       setAppointmentAgents(data.leaderboard);
       setAllAppointments(data.totalAppointments);
       setTotalPages(data.totalPages);
+      if (appointmentType === "appointment") {
+        setCount(data.totalAppointmentCount);
+      } else {
+        setCount(data.totalFollowUps);
+      }
     });
     apiRequest("GET", "department/get-all").then((data) => {
-      const deptNames = data.departments.map((dept) => dept.name);
-      setDepartments(["All Department", ...deptNames]);
+      setDepartments(data.departments);
     });
   };
   useEffect(() => {
@@ -78,10 +84,38 @@ export default function Leaderboard() {
     ).then((data) => {
       setMonthlyAppointmentAgents(data.leaderboard);
       setMonthlyTotalPages(data.totalPages);
+      if (monthAppointmentType === "appointment") {
+        setMonthlyCount(data.totalAppointmentCount);
+      } else {
+        setMonthlyCount(data.totalFollowUps);
+      }
     });
   };
 
   const callAgents = [];
+  const formatTimeSince = (dateString: string) => {
+    const date = new Date(dateString);
+    const now = new Date();
+    const diffInMs = now.getTime() - date.getTime();
+    const diffInHours = Math.floor(diffInMs / (1000 * 60 * 60));
+    if (diffInHours < 1) {
+      const diffInMinutes = Math.floor(diffInMs / (1000 * 60));
+      return `${diffInMinutes} minute(s) ago`;
+    }
+    if (diffInHours < 24) {
+      return `${diffInHours} hour(s) ago`;
+    }
+    const diffInDays = Math.floor(diffInHours / 24);
+    if (diffInDays < 30) {
+      return `${diffInDays} day(s) ago`;
+    }
+    const diffInMonths = Math.floor(diffInDays / 30);
+    if (diffInMonths < 12) {
+      return `${diffInMonths} month(s) ago`;
+    }
+    const diffInYears = Math.floor(diffInMonths / 12);
+    return `${diffInYears} year(s) ago`;
+  };
 
   return (
     <div className="space-y-6">
@@ -136,9 +170,7 @@ export default function Leaderboard() {
       {activeTab === "appointment" && (
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           <Card className="p-6 bg-gray-50">
-            <h3 className="text-lg font-semibold mb-4">
-              Total Count :{appointmentAgents.length}
-            </h3>
+            <h3 className="text-lg font-semibold mb-4">Total Count :{count}</h3>
 
             <div className="space-y-4">
               <RadioGroup
@@ -174,12 +206,12 @@ export default function Leaderboard() {
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
+                    <SelectItem key="all-department" value="all-department">
+                      All Department
+                    </SelectItem>
                     {departments.map((dept) => (
-                      <SelectItem
-                        key={dept}
-                        value={dept.toLowerCase().replace(" ", "-")}
-                      >
-                        {dept}
+                      <SelectItem key={dept._id} value={dept._id}>
+                        {dept.name}
                       </SelectItem>
                     ))}
                   </SelectContent>
@@ -221,7 +253,7 @@ export default function Leaderboard() {
                         Total Appointments
                       </th>
                       <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">
-                        Time since last appointment
+                        Last Appointment At
                       </th>
                     </tr>
                   </thead>
@@ -235,7 +267,9 @@ export default function Leaderboard() {
                           {agent.totalAppointments}
                         </td>
                         <td className="px-4 py-3 text-sm text-gray-900">
-                          {agent.timeSinceLastAppointment || "-"}
+                          {agent.lastAppointmentDate
+                            ? formatTimeSince(agent.lastAppointmentDate)
+                            : "-"}
                         </td>
                       </tr>
                     ))}
@@ -293,12 +327,12 @@ export default function Leaderboard() {
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
+                    <SelectItem key="all-department" value="all-department">
+                      All Department
+                    </SelectItem>
                     {departments.map((dept) => (
-                      <SelectItem
-                        key={dept}
-                        value={dept.toLowerCase().replace(" ", "-")}
-                      >
-                        {dept}
+                      <SelectItem key={dept._id} value={dept._id}>
+                        {dept.name}
                       </SelectItem>
                     ))}
                   </SelectContent>
@@ -356,7 +390,7 @@ export default function Leaderboard() {
                           {agent.totalAppointments}
                         </td>
                         <td className="px-4 py-3 text-sm text-gray-900">
-                          {agent.dailyAverage}
+                          {(agent.totalAppointments / 30).toFixed(2)}
                         </td>
                       </tr>
                     ))}

@@ -583,7 +583,7 @@ export default function ScheduleShift() {
       case "profile":
         return "Dashboard / My Account";
       default:
-        return "Dashboard / Schedule & Shift";
+        return "Dashboard/ My Account";
     }
   };
 
@@ -593,8 +593,6 @@ export default function ScheduleShift() {
         return "Change Password";
       case "profile":
         return "Basic Info";
-      default:
-        return "Schedule & Shift";
     }
   };
 
@@ -628,7 +626,7 @@ export default function ScheduleShift() {
           Change Password
         </button>
 
-        <button
+        {/* <button
           onClick={() => setActiveTab("schedule")}
           className={`w-full flex items-center gap-3 px-4 py-2.5 text-left rounded-lg transition-colors text-sm ${
             activeTab === "schedule"
@@ -639,7 +637,7 @@ export default function ScheduleShift() {
         >
           <CalendarIcon className="h-4 w-4" />
           Schedule & Shift
-        </button>
+        </button> */}
       </div>
 
       {/* Main Content */}

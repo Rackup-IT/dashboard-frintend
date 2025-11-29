@@ -11,12 +11,10 @@ import {
   Building2,
   ChevronDown,
   ChevronRight,
-  Clock,
   Database,
   Info,
   KeyRound,
   List,
-  MessageSquare,
   Settings as SettingsIcon,
   Target,
   Trophy,
@@ -26,6 +24,7 @@ import {
 } from "lucide-react";
 import { useEffect, useState } from "react";
 import { Link, useLocation } from "wouter";
+import logo from "../../assets/logo.jpeg";
 // import companyLogo from "@assets/WhatsApp Image 2025-10-14 at 09.32.15_1761927208177.jpeg";
 
 interface SidebarProps {
@@ -42,9 +41,9 @@ const navItems = [
 const profileItems = [
   { href: "/appointment/history", label: "Appointment History" },
   { href: "/my-statistics", label: "My Stats" },
-  { href: "/call-history", label: "Call History" },
-  { href: "/schedule-shift", label: "Schedule & Shift" },
-  { href: "/rc-agent-activity", label: "RC - Agent Activity" },
+  // { href: "/call-history", label: "Call History" },
+  // { href: "/schedule-shift", label: "Schedule & Shift" },
+  // { href: "/rc-agent-activity", label: "RC - Agent Activity" },
 ];
 
 const managerItems = [
@@ -52,9 +51,9 @@ const managerItems = [
   { href: "/admin/dealer-list", label: "Dealer List" },
   { href: "/admin/employee-list", label: "User List" },
   { href: "/admin/appointment-history", label: "Appointment History" },
-  { href: "/admin/call-history", label: "Call History" },
-  { href: "/admin/appointment-export", label: "Appointment Export" },
-  { href: "/admin/rc-agent-activity", label: "RC - Agent Activity" },
+  // { href: "/admin/call-history", label: "Call History" },
+  // { href: "/admin/appointment-export", label: "Appointment Export" },
+  // { href: "/admin/rc-agent-activity", label: "RC - Agent Activity" },
 ];
 
 const adminItems = [
@@ -63,19 +62,19 @@ const adminItems = [
   { href: "/admin/department-list", label: "Department List", icon: List },
   { href: "/admin/scenario-list", label: "Scenario List", icon: Target },
   { href: "/admin/lead-source", label: "Lead Source", icon: Database },
-  {
-    href: "/admin/dealership-logins",
-    label: "Dealership Logins",
-    icon: KeyRound,
-  },
+  // {
+  //   href: "/admin/dealership-logins",
+  //   label: "Dealership Logins",
+  //   icon: KeyRound,
+  // },
   { href: "/admin/roles", label: "Role & Permission", icon: KeyRound },
-  { href: "/admin/sms-logs", label: "Sms & Logs", icon: MessageSquare },
-  { href: "/admin/pending-sms", label: "Pending Sms", icon: Clock },
+  // { href: "/admin/sms-logs", label: "Sms & Logs", icon: MessageSquare },
+  // { href: "/admin/pending-sms", label: "Pending Sms", icon: Clock },
 ];
 
 const settingsItems = [
   { href: "/settings/general", label: "General Settings" },
-  { href: "/settings/ring-central", label: "Ring Central Settings" },
+  // { href: "/settings/ring-central", label: "Ring Central Settings" },
 ];
 
 export default function Sidebar({ open, setOpen }: SidebarProps) {
@@ -85,17 +84,23 @@ export default function Sidebar({ open, setOpen }: SidebarProps) {
   const [adminOpen, setAdminOpen] = useState(true);
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [user, setUser] = useState<any>(null);
+  const [siteName, setSiteName] = useState("BDC Professionals");
 
   const isActive = (href: string) => {
     if (href === "/dashboard") return location === "/dashboard";
     return location.startsWith(href);
   };
   useEffect(() => {
-    getUser();
+    getData();
   }, []);
-  const getUser = () => {
+  const getData = () => {
     apiRequest("GET", "me").then((data) => {
       setUser(data.user);
+    });
+    apiRequest("GET", "general/settings").then((data) => {
+      if (data.settings) {
+        setSiteName(data.settings.siteName || "BDC Professionals");
+      }
     });
   };
 
@@ -119,13 +124,13 @@ export default function Sidebar({ open, setOpen }: SidebarProps) {
         {/* Logo */}
         <div className="p-4 border-b border-gray-200">
           <div className="flex items-center space-x-3">
-            {/* <img
-              src={companyLogo}
+            <img
+              src={logo}
               alt="Company Logo"
               className="h-10 w-auto object-contain"
-            /> */}
+            />
             <span className="font-semibold text-lg text-gray-800">
-              BDC Professionals
+              {siteName}
             </span>
           </div>
         </div>
@@ -134,7 +139,7 @@ export default function Sidebar({ open, setOpen }: SidebarProps) {
         <div className="p-4 border-b border-gray-200">
           <div className="flex items-center space-x-2">
             <User className="text-gray-400 h-5 w-5" />
-            <span className="text-sm text-gray-600">Hi, {user.name}</span>
+            <span className="text-sm text-gray-600">Hi, {user?.name}</span>
           </div>
         </div>
 

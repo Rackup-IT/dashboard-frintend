@@ -5,10 +5,12 @@ import { Input } from "@/components/ui/input";
 import { auth, provider } from "@/lib/firebase";
 import { apiRequest } from "@/lib/queryClient";
 import { signInWithPopup } from "firebase/auth";
+import Cookies from "js-cookie";
 import { Eye, EyeOff } from "lucide-react";
 import { useState } from "react";
 import { FcGoogle } from "react-icons/fc";
 import { useLocation } from "wouter";
+import logoPath from "../../assets/logo.jpeg";
 // import logoPath from "@assets/WhatsApp Image 2025-10-14 at 09.32.15_1761927208177.jpeg";
 
 export default function Login() {
@@ -28,6 +30,10 @@ export default function Login() {
       rememberMe,
     });
     if (response.success) {
+      Cookies.set("isAuthenticated", true, {
+        expires: rememberMe ? 7 : undefined,
+      });
+
       setLocation("/dashboard");
     } else {
       setError(response.message || "Login failed");
@@ -46,6 +52,8 @@ export default function Login() {
     });
     if (response.success) {
       setLocation("/dashboard");
+    } else {
+      setError(response.message || "Google Login failed");
     }
   };
 
@@ -58,7 +66,7 @@ export default function Login() {
             <span className="text-blue-600">BDC</span>
             <span className="text-blue-600"> Professionals</span>
           </span>
-          {/* <img src={logoPath} alt="Logo" className="h-10 w-10 rounded-full" /> */}
+          <img src={logoPath} alt="Logo" className="h-10 w-10 rounded-full" />
         </div>
         {error && (
           <div className="mb-4 p-3 text-sm text-red-700 bg-red-100 rounded-md">

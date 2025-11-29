@@ -262,7 +262,9 @@ export default function AppointmentHistory() {
                         </Badge>
                       </TableCell>
                       <TableCell className="text-sm">
-                        {appointment.appointmentDate}
+                        {appointment.appointmentDate
+                          ? formatDate(appointment.appointmentDate)
+                          : "-"}
                       </TableCell>
                       <TableCell className="text-sm">
                         {appointment.appointmentTime}

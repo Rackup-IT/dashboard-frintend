@@ -1,28 +1,52 @@
-import { useState } from "react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { apiRequest } from "@/lib/queryClient";
+import { useEffect, useState } from "react";
 
 export default function GeneralSettings() {
   const [settings, setSettings] = useState({
-    siteName: "True BDC",
+    siteName: "BDC Professional",
     siteAddress: "",
-    siteEmail: "manager@truebdc.com",
-    siteSupportEmail: "manager@truebdc.com",
+    siteEmail: "manager@bdc.com",
+    siteSupportEmail: "manager@bdc.com",
     sitePhone: "+95843877596",
     timezone: "America/New_York",
     debugMode: "Disable",
   });
 
+  useEffect(() => {
+    loadGeneralSettings();
+  }, []);
+
+  const loadGeneralSettings = () => {
+    apiRequest("GET", "general/settings").then((data) => {
+      if (data.settings) {
+        setSettings(data.settings);
+      }
+    });
+  };
+
   const handleInputChange = (field: string, value: string) => {
-    setSettings(prev => ({ ...prev, [field]: value }));
+    setSettings((prev) => ({ ...prev, [field]: value }));
   };
 
   const handleClearCache = () => {
     console.log("Clearing cache...");
+  };
+  const handleSaveSettings = () => {
+    apiRequest("PUT", "general/settings", settings).then((data) => {
+      alert("Settings saved successfully!");
+    });
   };
 
   return (
@@ -48,46 +72,65 @@ export default function GeneralSettings() {
                 <Input
                   id="siteName"
                   value={settings.siteName}
-                  onChange={(e) => handleInputChange("siteName", e.target.value)}
+                  onChange={(e) =>
+                    handleInputChange("siteName", e.target.value)
+                  }
                 />
               </div>
-              
+
               <div className="space-y-2">
                 <Label htmlFor="siteAddress">Site Address</Label>
                 <Textarea
                   id="siteAddress"
                   rows={3}
                   value={settings.siteAddress}
-                  onChange={(e) => handleInputChange("siteAddress", e.target.value)}
+                  onChange={(e) =>
+                    handleInputChange("siteAddress", e.target.value)
+                  }
                 />
               </div>
-              
+
               <div className="space-y-2">
                 <Label htmlFor="siteSupportEmail">Site Support Email</Label>
                 <Input
                   id="siteSupportEmail"
                   type="email"
                   value={settings.siteSupportEmail}
-                  onChange={(e) => handleInputChange("siteSupportEmail", e.target.value)}
+                  onChange={(e) =>
+                    handleInputChange("siteSupportEmail", e.target.value)
+                  }
                 />
               </div>
-              
+
               <div className="space-y-2">
                 <Label htmlFor="timezone">Timezone</Label>
-                <Select value={settings.timezone} onValueChange={(value) => handleInputChange("timezone", value)}>
+                <Select
+                  value={settings.timezone}
+                  onValueChange={(value) =>
+                    handleInputChange("timezone", value)
+                  }
+                >
                   <SelectTrigger>
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="America/New_York">America/New_York</SelectItem>
-                    <SelectItem value="America/Chicago">America/Chicago</SelectItem>
-                    <SelectItem value="America/Denver">America/Denver</SelectItem>
-                    <SelectItem value="America/Los_Angeles">America/Los_Angeles</SelectItem>
+                    <SelectItem value="America/New_York">
+                      America/New_York
+                    </SelectItem>
+                    <SelectItem value="America/Chicago">
+                      America/Chicago
+                    </SelectItem>
+                    <SelectItem value="America/Denver">
+                      America/Denver
+                    </SelectItem>
+                    <SelectItem value="America/Los_Angeles">
+                      America/Los_Angeles
+                    </SelectItem>
                   </SelectContent>
                 </Select>
               </div>
             </div>
-            
+
             {/* Right Column */}
             <div className="space-y-6">
               <div className="space-y-2">
@@ -96,23 +139,32 @@ export default function GeneralSettings() {
                   id="siteEmail"
                   type="email"
                   value={settings.siteEmail}
-                  onChange={(e) => handleInputChange("siteEmail", e.target.value)}
+                  onChange={(e) =>
+                    handleInputChange("siteEmail", e.target.value)
+                  }
                 />
               </div>
-              
+
               <div className="space-y-2">
                 <Label htmlFor="sitePhone">Site Phone</Label>
                 <Input
                   id="sitePhone"
                   type="tel"
                   value={settings.sitePhone}
-                  onChange={(e) => handleInputChange("sitePhone", e.target.value)}
+                  onChange={(e) =>
+                    handleInputChange("sitePhone", e.target.value)
+                  }
                 />
               </div>
-              
+
               <div className="space-y-2">
                 <Label htmlFor="debugMode">Debug Mode</Label>
-                <Select value={settings.debugMode} onValueChange={(value) => handleInputChange("debugMode", value)}>
+                <Select
+                  value={settings.debugMode}
+                  onValueChange={(value) =>
+                    handleInputChange("debugMode", value)
+                  }
+                >
                   <SelectTrigger>
                     <SelectValue />
                   </SelectTrigger>
@@ -125,16 +177,24 @@ export default function GeneralSettings() {
             </div>
           </div>
         </CardContent>
+        <div className="flex justify-end p-4">
+          <Button
+            onClick={handleSaveSettings}
+            className="bg-green-600 hover:bg-green-700 text-white"
+          >
+            Save Settings
+          </Button>
+        </div>
       </Card>
-      
+
       {/* Logo Settings */}
-      <Card>
+      {/* <Card>
         <CardHeader>
           <CardTitle>Images</CardTitle>
         </CardHeader>
         <CardContent>
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            {/* Logo */}
+           
             <div className="space-y-2">
               <Label>Logo</Label>
               <div className="border border-gray-300 rounded-lg p-4">
@@ -156,7 +216,7 @@ export default function GeneralSettings() {
               </div>
             </div>
             
-            {/* Light Logo */}
+           
             <div className="space-y-2">
               <Label>Light Logo</Label>
               <div className="border border-gray-300 rounded-lg p-4">
@@ -179,7 +239,7 @@ export default function GeneralSettings() {
             </div>
           </div>
           
-          {/* Favicon */}
+         
           <div className="mt-6">
             <Label>Favicon</Label>
             <div className="border border-gray-300 rounded-lg p-4 max-w-md">
@@ -197,7 +257,7 @@ export default function GeneralSettings() {
             </div>
           </div>
         </CardContent>
-      </Card>
+      </Card> */}
     </div>
   );
 }

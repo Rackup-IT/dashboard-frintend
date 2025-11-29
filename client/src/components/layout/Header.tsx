@@ -1,7 +1,12 @@
-import { useState } from "react";
 import { Button } from "@/components/ui/button";
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
-import { Bell, Menu, ChevronDown, User, LogOut } from "lucide-react";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import Cookies from "js-cookie";
+import { ChevronDown, LogOut, Menu, User } from "lucide-react";
 import { useLocation } from "wouter";
 
 interface HeaderProps {
@@ -39,6 +44,8 @@ export default function Header({ onMenuClick }: HeaderProps) {
   };
 
   const handleLogout = () => {
+    Cookies.remove("isAuthenticated");
+
     setLocation("/login");
   };
 
@@ -64,10 +71,10 @@ export default function Header({ onMenuClick }: HeaderProps) {
           </div>
         </div>
         <div className="flex items-center space-x-4">
-          <Button variant="ghost" size="sm">
+          {/* <Button variant="ghost" size="sm">
             <Bell className="h-4 w-4 text-gray-400" />
-          </Button>
-          
+          </Button> */}
+
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <div className="flex items-center space-x-2 cursor-pointer hover:bg-gray-50 px-2 py-1 rounded">
@@ -76,11 +83,19 @@ export default function Header({ onMenuClick }: HeaderProps) {
               </div>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="w-48">
-              <DropdownMenuItem onClick={handleProfileClick} className="cursor-pointer" data-testid="menu-profile">
+              <DropdownMenuItem
+                onClick={handleProfileClick}
+                className="cursor-pointer"
+                data-testid="menu-profile"
+              >
                 <User className="h-4 w-4 mr-2" />
                 Profile
               </DropdownMenuItem>
-              <DropdownMenuItem onClick={handleLogout} className="cursor-pointer" data-testid="menu-logout">
+              <DropdownMenuItem
+                onClick={handleLogout}
+                className="cursor-pointer"
+                data-testid="menu-logout"
+              >
                 <LogOut className="h-4 w-4 mr-2" />
                 Logout
               </DropdownMenuItem>
