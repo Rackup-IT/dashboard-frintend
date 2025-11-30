@@ -1,15 +1,31 @@
-import { useState } from "react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Calendar } from "@/components/ui/calendar";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Activity, Calendar as CalendarIcon } from "lucide-react";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Label } from "@/components/ui/label";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
 import { format } from "date-fns";
-import { DateRange } from "react-day-picker";
+import { Activity, Calendar as CalendarIcon } from "lucide-react";
+import { useState } from "react";
+import type { DateRange } from "react-day-picker";
 
 export default function RCAgentActivity() {
   const [selectedAgent, setSelectedAgent] = useState("");
@@ -20,14 +36,14 @@ export default function RCAgentActivity() {
   // Sample agents list
   const agents = [
     "John Smith",
-    "Sarah Johnson", 
+    "Sarah Johnson",
     "Mike Wilson",
     "Lisa Brown",
-    "David Miller"
+    "David Miller",
   ];
 
   // Empty data array to match the screenshot's empty state
-  const activityData: any[] = [];
+  const activityData: unknown[] = [];
 
   const formatDateRange = () => {
     if (!dateRange?.from) {
@@ -37,7 +53,10 @@ export default function RCAgentActivity() {
       return format(dateRange.from, "PPP");
     }
     if (dateRange.from && dateRange.to) {
-      return `${format(dateRange.from, "PPP")} - ${format(dateRange.to, "PPP")}`;
+      return `${format(dateRange.from, "PPP")} - ${format(
+        dateRange.to,
+        "PPP"
+      )}`;
     }
     return "Select Date Range to Filter Appointments";
   };
@@ -75,7 +94,7 @@ export default function RCAgentActivity() {
                   </SelectContent>
                 </Select>
               </div>
-              
+
               <div className="flex-1">
                 <Popover open={isCalendarOpen} onOpenChange={setIsCalendarOpen}>
                   <PopoverTrigger asChild>
@@ -126,7 +145,9 @@ export default function RCAgentActivity() {
                     <TableHead className="text-center">First Dial</TableHead>
                     <TableHead className="text-center">Last Dial</TableHead>
                     <TableHead className="text-center">Time Active</TableHead>
-                    <TableHead className="text-center">10 Minutes Gap</TableHead>
+                    <TableHead className="text-center">
+                      10 Minutes Gap
+                    </TableHead>
                     <TableHead className="text-center">10 Min* Gap</TableHead>
                     <TableHead className="text-center">5-10 Min* Gap</TableHead>
                     <TableHead className="text-center">Total Gap</TableHead>
@@ -139,25 +160,52 @@ export default function RCAgentActivity() {
                 <TableBody>
                   {activityData.length === 0 ? (
                     <TableRow>
-                      <TableCell colSpan={12} className="text-center py-8 text-gray-500">
+                      <TableCell
+                        colSpan={12}
+                        className="text-center py-8 text-gray-500"
+                      >
                         Please select Agent and Date Range to see Lead Log
                       </TableCell>
                     </TableRow>
                   ) : (
                     activityData.map((activity, index) => (
                       <TableRow key={index}>
-                        <TableCell className="text-center">{activity.date}</TableCell>
-                        <TableCell className="text-center">{activity.firstDial}</TableCell>
-                        <TableCell className="text-center">{activity.lastDial}</TableCell>
-                        <TableCell className="text-center">{activity.timeActive}</TableCell>
-                        <TableCell className="text-center">{activity.tenMinutesGap}</TableCell>
-                        <TableCell className="text-center">{activity.tenMinGap}</TableCell>
-                        <TableCell className="text-center">{activity.fiveToTenMinGap}</TableCell>
-                        <TableCell className="text-center">{activity.totalGap}</TableCell>
-                        <TableCell className="text-center">{activity.onPhone}</TableCell>
-                        <TableCell className="text-center">{activity.offPhone}</TableCell>
-                        <TableCell className="text-center">{activity.totalCalls}</TableCell>
-                        <TableCell className="text-center">{activity.callGaps}</TableCell>
+                        <TableCell className="text-center">
+                          {activity.date}
+                        </TableCell>
+                        <TableCell className="text-center">
+                          {activity.firstDial}
+                        </TableCell>
+                        <TableCell className="text-center">
+                          {activity.lastDial}
+                        </TableCell>
+                        <TableCell className="text-center">
+                          {activity.timeActive}
+                        </TableCell>
+                        <TableCell className="text-center">
+                          {activity.tenMinutesGap}
+                        </TableCell>
+                        <TableCell className="text-center">
+                          {activity.tenMinGap}
+                        </TableCell>
+                        <TableCell className="text-center">
+                          {activity.fiveToTenMinGap}
+                        </TableCell>
+                        <TableCell className="text-center">
+                          {activity.totalGap}
+                        </TableCell>
+                        <TableCell className="text-center">
+                          {activity.onPhone}
+                        </TableCell>
+                        <TableCell className="text-center">
+                          {activity.offPhone}
+                        </TableCell>
+                        <TableCell className="text-center">
+                          {activity.totalCalls}
+                        </TableCell>
+                        <TableCell className="text-center">
+                          {activity.callGaps}
+                        </TableCell>
                       </TableRow>
                     ))
                   )}
@@ -170,19 +218,19 @@ export default function RCAgentActivity() {
               <div className="text-sm text-gray-500">
                 Showing 0 to 0 of 0 entries
               </div>
-              
+
               <div className="flex items-center gap-2">
-                <Button 
-                  variant="outline" 
+                <Button
+                  variant="outline"
                   size="sm"
                   disabled={true}
                   className="text-gray-400"
                 >
                   Previous
                 </Button>
-                
-                <Button 
-                  variant="outline" 
+
+                <Button
+                  variant="outline"
                   size="sm"
                   disabled={true}
                   className="text-gray-400"

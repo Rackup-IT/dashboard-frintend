@@ -40,7 +40,7 @@ import { apiRequest } from "@/lib/queryClient";
 import { format } from "date-fns";
 import { Calendar as CalendarIcon, MoreHorizontal, Plus } from "lucide-react";
 import { useEffect, useState } from "react";
-import { DateRange } from "react-day-picker";
+import type { DateRange } from "react-day-picker";
 import { useLocation } from "wouter";
 
 export default function AppointmentHistory() {
@@ -65,9 +65,7 @@ export default function AppointmentHistory() {
     const date = new Date(dateStr);
     return format(date, "MM/dd/yyyy");
   };
-  useEffect(() => {
-    loadData();
-  }, []);
+
   const loadData = () => {
     apiRequest("GET", "appointment/get-all").then((data) => {
       setAppointmentData(data.appointments);
@@ -84,6 +82,9 @@ export default function AppointmentHistory() {
       setUsers(["All Users", ...userNames]);
     });
   };
+  useEffect(() => {
+    loadData();
+  }, []);
   // Filter appointments
   const filteredAppointments = appointmentData.filter((appointment) => {
     const matchesSearch =

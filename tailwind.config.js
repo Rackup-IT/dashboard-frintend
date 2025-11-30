@@ -1,8 +1,10 @@
-import type { Config } from "tailwindcss";
-
+/** @type {import('tailwindcss').Config} */
 export default {
   darkMode: ["class"],
-  content: ["./client/index.html", "./client/src/**/*.{js,jsx,ts,tsx}"],
+  content: [
+    "./index.html", // your HTML entry
+    "./src/**/*.{js,ts,jsx,tsx}", // all React components
+  ],
   theme: {
     extend: {
       borderRadius: {
@@ -45,11 +47,11 @@ export default {
         input: "var(--input)",
         ring: "var(--ring)",
         chart: {
-          "1": "var(--chart-1)",
-          "2": "var(--chart-2)",
-          "3": "var(--chart-3)",
-          "4": "var(--chart-4)",
-          "5": "var(--chart-5)",
+          1: "var(--chart-1)",
+          2: "var(--chart-2)",
+          3: "var(--chart-3)",
+          4: "var(--chart-4)",
+          5: "var(--chart-5)",
         },
         sidebar: {
           DEFAULT: "var(--sidebar-background)",
@@ -87,4 +89,4 @@ export default {
     },
   },
   plugins: [require("tailwindcss-animate"), require("@tailwindcss/typography")],
-} satisfies Config;
+};

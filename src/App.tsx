@@ -5,7 +5,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import AddDealer from "@/pages/admin/AddDealer";
 import AddDealership from "@/pages/admin/AddDealership";
 import AddEmployee from "@/pages/admin/AddEmployee";
-import AppointmentExport from "@/pages/admin/AppointmentExport";
+// import AppointmentExport from "@/pages/admin/AppointmentExport";
 import AdminAppointmentHistory from "@/pages/admin/AppointmentHistory";
 import AdminCallHistory from "@/pages/admin/CallHistory";
 import DealerList from "@/pages/admin/DealerList";
@@ -80,10 +80,10 @@ function Router() {
             component={AdminAppointmentHistory}
           />
           <Route path="/admin/call-history" component={AdminCallHistory} />
-          <Route
+          {/* <Route
             path="/admin/appointment-export"
             component={AppointmentExport}
-          />
+          /> */}
           <Route
             path="/admin/rc-agent-activity"
             component={AdminRCAgentActivity}
