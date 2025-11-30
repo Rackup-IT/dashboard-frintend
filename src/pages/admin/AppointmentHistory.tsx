@@ -326,7 +326,7 @@ export default function AppointmentHistory() {
                             <Button
                               variant="ghost"
                               size="sm"
-                              data-testid={`button-action-${appointment.id}`}
+                              data-testid={`button-action-${appointment._id}`}
                             >
                               <MoreHorizontal className="h-4 w-4" />
                             </Button>
@@ -334,16 +334,16 @@ export default function AppointmentHistory() {
                           <DropdownMenuContent align="end">
                             <DropdownMenuItem
                               onClick={() => handleViewAppointment(appointment)}
-                              data-testid={`menu-view-${appointment.id}`}
+                              data-testid={`menu-view-${appointment._id}`}
                             >
                               View
                             </DropdownMenuItem>
                             <DropdownMenuItem
                               className="text-red-600"
                               onClick={() =>
-                                handleDeleteAppointment(appointment.id)
+                                handleDeleteAppointment(appointment._id)
                               }
-                              data-testid={`menu-delete-${appointment.id}`}
+                              data-testid={`menu-delete-${appointment._id}`}
                             >
                               Delete
                             </DropdownMenuItem>

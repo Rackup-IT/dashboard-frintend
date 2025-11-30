@@ -57,9 +57,6 @@ export default function AppointmentHistory() {
     const date = new Date(dateStr);
     return format(date, "MM/dd/yyyy");
   };
-  useEffect(() => {
-    loadData();
-  }, []);
   const loadData = () => {
     apiRequest("GET", "appointment/get-all").then((data) => {
       setAppointmentData(data.appointments);
@@ -76,6 +73,9 @@ export default function AppointmentHistory() {
       setUsers(["All Users", ...userNames]);
     });
   };
+  useEffect(() => {
+    loadData();
+  }, []);
 
   // Filter appointments based on search criteria
   const filteredAppointments = appointmentData.filter((appointment) => {
